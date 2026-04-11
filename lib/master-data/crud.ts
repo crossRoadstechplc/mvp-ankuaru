@@ -3,7 +3,11 @@ import { randomUUID } from 'node:crypto'
 import type { LiveDataStore, Trade } from '@/lib/domain/types'
 import { getPreviewProjectRoot } from '@/lib/admin/preview-sessions'
 import { isLotExportEligible } from '@/lib/labs/export-eligibility'
-import { readLiveDataStore, writeLiveDataStore } from '@/lib/persistence/live-data-store'
+import {
+  getLiveDataProjectRoot,
+  readLiveDataStore,
+  writeLiveDataStore,
+} from '@/lib/persistence/live-data-store'
 
 import {
   MASTER_COLLECTION_SPECS,
@@ -35,7 +39,7 @@ export const assertValidEntityId = (id: string): string => {
 
 export const readCollection = async <Name extends MasterCollectionName>(
   collectionName: Name,
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<MasterEntityMap[Name][]> => {
   const store = await readLiveDataStore(projectRoot)
   const storeKey = MASTER_COLLECTION_SPECS[collectionName].storeKey as MasterStoreKeyMap[Name]
@@ -45,7 +49,7 @@ export const readCollection = async <Name extends MasterCollectionName>(
 export const readEntityById = async <Name extends MasterCollectionName>(
   collectionName: Name,
   id: string,
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<MasterEntityMap[Name]> => {
   const entityId = assertValidEntityId(id)
   const collection = await readCollection(collectionName, projectRoot)
@@ -73,7 +77,7 @@ const getMutableCollection = <Name extends MasterCollectionName>(
 const withCollectionWritten = async <Name extends MasterCollectionName>(
   collectionName: Name,
   mutator: (store: LiveDataStore, collection: MasterCollectionEntry<Name>[]) => void,
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<MasterEntityMap[Name][]> => {
   const store = await readLiveDataStore(projectRoot)
   const collection = getMutableCollection(store, collectionName)
@@ -120,7 +124,7 @@ const throwDuplicateIfNeeded = <Name extends MasterCollectionName>(
 export const createEntity = async <Name extends MasterCollectionName>(
   collectionName: Name,
   payload: unknown,
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<MasterEntityMap[Name]> => {
   try {
     const parsed = MASTER_COLLECTION_SPECS[collectionName].parseCreate(payload)
@@ -165,7 +169,7 @@ export const updateEntity = async <Name extends MasterCollectionName>(
   collectionName: Name,
   id: string,
   payload: unknown,
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<MasterEntityMap[Name]> => {
   const entityId = assertValidEntityId(id)
 
@@ -225,7 +229,7 @@ export const updateEntity = async <Name extends MasterCollectionName>(
 export const deleteEntity = async <Name extends MasterCollectionName>(
   collectionName: Name,
   id: string,
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<MasterEntityMap[Name]> => {
   const entityId = assertValidEntityId(id)
   let removedEntity: MasterEntityMap[Name] | undefined
@@ -265,5 +269,5 @@ export const resolveProjectRootFromRequest = (request: Request): string => {
     return root
   }
 
-  return request.headers.get('x-ankuaru-project-root') ?? process.env.ANKUARU_PROJECT_ROOT ?? process.cwd()
+  return request.headers.get('x-ankuaru-project-root') ?? getLiveDataProjectRoot()
 }

@@ -1,3 +1,4 @@
+import os from 'node:os'
 import path from 'node:path'
 
 import { cloneSeedData } from '@/data/seed-data'
@@ -6,10 +7,24 @@ import type { LiveDataStore } from '@/lib/domain/types'
 
 import { createJsonFileStore } from './file-store'
 
-export const getLiveDataFilePath = (projectRoot = process.cwd()): string =>
+/**
+ * Directory that contains `.ankuaru/live-data.json`.
+ * On Vercel, `process.cwd()` is `/var/task` (read-only); only `/tmp` is writable.
+ */
+export const getLiveDataProjectRoot = (): string => {
+  if (process.env.ANKUARU_PROJECT_ROOT) {
+    return process.env.ANKUARU_PROJECT_ROOT
+  }
+  if (process.env.VERCEL === '1') {
+    return path.join(os.tmpdir(), 'ankuaru-live-data')
+  }
+  return process.cwd()
+}
+
+export const getLiveDataFilePath = (projectRoot = getLiveDataProjectRoot()): string =>
   path.join(projectRoot, '.ankuaru', 'live-data.json')
 
-export const createLiveDataStore = (projectRoot = process.cwd()) =>
+export const createLiveDataStore = (projectRoot = getLiveDataProjectRoot()) =>
   createJsonFileStore<LiveDataStore>({
     filePath: getLiveDataFilePath(projectRoot),
     seedFactory: cloneSeedData,
@@ -17,14 +32,14 @@ export const createLiveDataStore = (projectRoot = process.cwd()) =>
   })
 
 export const initializeLiveDataStore = async (
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<LiveDataStore> => createLiveDataStore(projectRoot).initialize()
 
 export const readLiveDataStore = async (
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<LiveDataStore> => createLiveDataStore(projectRoot).read()
 
 export const writeLiveDataStore = async (
   value: LiveDataStore,
-  projectRoot = process.cwd(),
+  projectRoot = getLiveDataProjectRoot(),
 ): Promise<LiveDataStore> => createLiveDataStore(projectRoot).write(value)
