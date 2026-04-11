@@ -1,0 +1,219 @@
+import Link from 'next/link'
+
+export type LotTraceRef = {
+  id: string
+  publicLotCode: string
+}
+
+export type LotTraceabilityPanelProps = {
+  lotId: string
+  publicLotCode: string
+  directFieldLabel?: string
+  directFarmerLabel?: string
+  originResolved: {
+    fieldId?: string
+    fieldName?: string
+    farmerId?: string
+    /** BFS-backward from this lot (current first). */
+    pathLotIds: string[]
+    /** This snapshot has no fieldId but an upstream lot in the ledger path does. */
+    resolvedViaLineage: boolean
+  }
+  pathLotRefs: LotTraceRef[]
+  currentStage: {
+    snapshotStatus: string
+    derivedHint?: string
+    latestEventType?: string
+  }
+  handoffs: Array<{
+    id: string
+    timestamp: string
+    type: string
+    actorRole: string
+    actorId: string
+  }>
+  backwardTrace: LotTraceRef[]
+  forwardTrace: LotTraceRef[]
+}
+
+export function LotTraceabilityPanel({
+  lotId,
+  publicLotCode,
+  directFieldLabel,
+  directFarmerLabel,
+  originResolved,
+  pathLotRefs,
+  currentStage,
+  handoffs,
+  backwardTrace,
+  forwardTrace,
+}: LotTraceabilityPanelProps) {
+  const showOriginBlock =
+    Boolean(directFieldLabel || directFarmerLabel) ||
+    originResolved.resolvedViaLineage ||
+    originResolved.pathLotIds.length > 1
+
+  return (
+    <section className="rounded-[2rem] border border-emerald-200/80 bg-emerald-50/40 p-6 shadow-sm shadow-black/5">
+      <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-900">Traceability</p>
+      <h2 className="mt-2 text-2xl font-semibold text-slate-950">Origin, stage, and ledger path</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-700">
+        Parent/child links and traces are derived from event input/output ids. Snapshot lineage fields are kept in sync
+        where possible; the explorer and paths below follow the ledger.
+      </p>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <article className="rounded-2xl border border-emerald-100 bg-white p-5">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Current stage</p>
+          <dl className="mt-4 space-y-3 text-sm text-slate-800">
+            <div>
+              <dt className="font-medium text-slate-500">Snapshot status</dt>
+              <dd className="mt-1 text-base font-semibold text-slate-950">{currentStage.snapshotStatus}</dd>
+            </div>
+            {currentStage.derivedHint ? (
+              <div>
+                <dt className="font-medium text-slate-500">Derived from latest event</dt>
+                <dd className="mt-1 text-base font-semibold text-slate-950">{currentStage.derivedHint}</dd>
+              </div>
+            ) : null}
+            {currentStage.latestEventType ? (
+              <div>
+                <dt className="font-medium text-slate-500">Latest ledger type</dt>
+                <dd className="mt-1 font-mono text-sm text-slate-900">{currentStage.latestEventType}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </article>
+
+        {showOriginBlock ? (
+          <article className="rounded-2xl border border-emerald-100 bg-white p-5">
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Field &amp; origin continuity</p>
+            {originResolved.resolvedViaLineage ? (
+              <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950 ring-1 ring-amber-200">
+                This lot has no direct field link on the snapshot. The field below is resolved by walking backward along
+                ledger lineage to an earlier lot that recorded a field.
+              </p>
+            ) : null}
+            <dl className="mt-4 space-y-3 text-sm text-slate-800">
+              <div>
+                <dt className="font-medium text-slate-500">Origin field</dt>
+                <dd className="mt-1 text-base font-semibold text-slate-950">
+                  {directFieldLabel ??
+                    (originResolved.fieldName && originResolved.fieldId
+                      ? `${originResolved.fieldName} (${originResolved.fieldId})`
+                      : originResolved.fieldId ?? 'Not linked')}
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-500">Farmer (user)</dt>
+                <dd className="mt-1 text-base font-semibold text-slate-950">
+                  {directFarmerLabel ?? originResolved.farmerId ?? 'Not linked'}
+                </dd>
+              </div>
+            </dl>
+            {pathLotRefs.length > 0 ? (
+              <div className="mt-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Origin path (this lot → upstream)</p>
+                <ol className="mt-2 flex flex-wrap items-center gap-1 text-sm">
+                  {pathLotRefs.map((ref, i) => (
+                    <li key={ref.id} className="flex flex-wrap items-center gap-1">
+                      {i > 0 ? <span className="text-slate-400">→</span> : null}
+                      {ref.id === lotId ? (
+                        <span className="rounded-md bg-emerald-100 px-2 py-0.5 font-medium text-emerald-950">
+                          {ref.publicLotCode} (this lot)
+                        </span>
+                      ) : (
+                        <Link
+                          href={`/lots/${ref.id}`}
+                          className="rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-900 underline-offset-2 hover:underline"
+                        >
+                          {ref.publicLotCode}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
+          </article>
+        ) : null}
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <article className="rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Backward trace</p>
+          <p className="mt-1 text-xs text-slate-600">Lots reachable upstream from {publicLotCode} (ledger-derived).</p>
+          {backwardTrace.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-600">No upstream lots.</p>
+          ) : (
+            <ul className="mt-3 space-y-2 text-sm">
+              {backwardTrace.map((ref) => (
+                <li key={ref.id}>
+                  {ref.id === lotId ? (
+                    <span className="font-medium text-emerald-900">{ref.publicLotCode} (this lot)</span>
+                  ) : (
+                    <Link href={`/lots/${ref.id}`} className="font-medium text-emerald-900 underline-offset-2 hover:underline">
+                      {ref.publicLotCode}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-5">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Forward trace</p>
+          <p className="mt-1 text-xs text-slate-600">Lots reachable downstream from {publicLotCode} (ledger-derived).</p>
+          {forwardTrace.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-600">No downstream lots.</p>
+          ) : (
+            <ul className="mt-3 space-y-2 text-sm">
+              {forwardTrace.map((ref) => (
+                <li key={ref.id}>
+                  {ref.id === lotId ? (
+                    <span className="font-medium text-sky-900">{ref.publicLotCode} (this lot)</span>
+                  ) : (
+                    <Link href={`/lots/${ref.id}`} className="font-medium text-sky-900 underline-offset-2 hover:underline">
+                      {ref.publicLotCode}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+      </div>
+
+      <article className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+        <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">Role &amp; actor handoffs</p>
+        <p className="mt-1 text-xs text-slate-600">Chronological ledger events that reference this lot (who acted).</p>
+        {handoffs.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-600">No events yet.</p>
+        ) : (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                  <th className="py-2 pr-3 font-medium">Time</th>
+                  <th className="py-2 pr-3 font-medium">Type</th>
+                  <th className="py-2 pr-3 font-medium">Role</th>
+                  <th className="py-2 font-medium">Actor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {handoffs.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-100">
+                    <td className="py-2 pr-3 font-mono text-xs text-slate-700">{row.timestamp}</td>
+                    <td className="py-2 pr-3 font-medium text-slate-900">{row.type}</td>
+                    <td className="py-2 pr-3 text-slate-800">{row.actorRole}</td>
+                    <td className="py-2 font-mono text-xs text-slate-700">{row.actorId}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </article>
+    </section>
+  )
+}
