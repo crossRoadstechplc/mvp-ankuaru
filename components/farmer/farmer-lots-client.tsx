@@ -80,12 +80,12 @@ export function FarmerLotsClient() {
             {isFarmerSession ? 'Farmer · Stage 06' : isAggregatorSession ? 'Aggregator' : 'Lots'}
           </p>
           <h1 className="mt-2 text-3xl font-semibold text-slate-950">
-            {isFarmerSession ? 'Lot creation' : isAggregatorSession ? 'Farmer origin lots' : 'Farmer lots'}
+            {isFarmerSession ? 'Pick creation' : isAggregatorSession ? 'Farmer origin lots' : 'Farmer lots'}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             {isFarmerSession ? (
               <>
-                Pick cherry into a new lot bound to one of your fields. The API creates the lot snapshot and an
+                Pick cherry into a new pick bound to one of your fields. The API creates the lot snapshot and an
                 append-only PICK event in one transaction.
               </>
             ) : isAggregatorSession ? (
@@ -149,7 +149,7 @@ export function FarmerLotsClient() {
 
       {isFarmerSession ? (
         <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-          <h2 className="text-xl font-semibold text-slate-950">Create lot</h2>
+          <h2 className="text-xl font-semibold text-slate-950">Create pick</h2>
           {loading ? (
             <p className="mt-4 text-sm text-slate-600">Loading…</p>
           ) : loadError ? (
@@ -160,7 +160,7 @@ export function FarmerLotsClient() {
                 farmerUserId={farmerUserId}
                 fields={fields}
                 onCreated={(lotId) => {
-                  setBanner(`Lot created (${lotId}). Use the list below to open the detail page.`)
+                  setBanner(`Pick created (${lotId}). Use the list below to open the detail page.`)
                   void reload()
                 }}
               />
@@ -171,11 +171,11 @@ export function FarmerLotsClient() {
 
       <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
         <h2 className="text-xl font-semibold text-slate-950">
-          {isFarmerSession ? 'Your lots' : 'All farmer-origin lots'}
+          {isFarmerSession ? 'Your picks' : 'All farmer-origin lots'}
         </h2>
         <p className="mt-2 text-sm text-slate-600">
           {isFarmerSession
-            ? 'Includes all lots where you are recorded as farmer.'
+            ? 'Includes all picks where you are recorded as farmer.'
             : 'Sorted newest first. Weight is the farmer-declared quantity on the lot snapshot — open a lot for events and lineage.'}
         </p>
         <div className="mt-6">

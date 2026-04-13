@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { HiArrowLongLeft, HiArrowLongRight } from 'react-icons/hi2'
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 
 import { PageBackBar } from '@/components/layout/page-back-bar'
@@ -53,11 +55,25 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   const pathname = usePathname() ?? ''
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-row bg-slate-50/80">
-      <aside className="flex w-52 shrink-0 flex-col border-r border-slate-200 bg-white sm:w-60">
-        <div className="px-3 py-4 sm:px-4">
+    <div className="flex min-h-0 w-full flex-1 flex-col bg-slate-50/80 md:flex-row">
+      {sidebarOpen ? (
+        <aside className="flex w-full shrink-0 flex-col border-b border-slate-200 bg-white md:w-60 md:border-b-0 md:border-r">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-3 sm:px-4 md:hidden">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workspace menu</p>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              aria-label="Hide sidebar"
+              title="Hide sidebar"
+            >
+              <HiArrowLongLeft aria-hidden="true" className="size-5 stroke-2" />
+            </button>
+          </div>
+          <div className="px-3 py-4 sm:px-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">{workspace}</p>
           {workspaceHint ? <p className="mt-1 text-xs leading-snug text-slate-600">{workspaceHint}</p> : null}
           <nav className="mt-4 flex max-w-full flex-col gap-0.5" aria-label="Workspace">
@@ -70,9 +86,25 @@ export function DashboardShell({
               </Link>
             ))}
           </nav>
+          </div>
+        </aside>
+      ) : null}
+      <main className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto px-3 py-5 sm:px-5 md:px-6 lg:px-8">
+        <div className="mb-4">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((open) => !open)}
+            className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+            aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+          >
+            {sidebarOpen ? (
+              <HiArrowLongLeft aria-hidden="true" className="size-5 stroke-2" />
+            ) : (
+              <HiArrowLongRight aria-hidden="true" className="size-5 stroke-2" />
+            )}
+          </button>
         </div>
-      </aside>
-      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
         <PageBackBar
           hidden={hideBackBar}
           sectionHomeHref={sectionHomeHref}

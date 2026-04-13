@@ -51,7 +51,7 @@ describe('HomeDashboard role switching', () => {
     expect(screen.getAllByRole('heading', { name: /farmer/i })).not.toHaveLength(0)
     expect(screen.getByText(/Active user: Alemu Bekele/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Add field' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Create lot' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Create pick' })).toBeInTheDocument()
   })
 
   it('shows bank-specific navigation and hides unrelated farmer actions', () => {

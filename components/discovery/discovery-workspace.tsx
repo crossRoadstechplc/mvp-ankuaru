@@ -43,12 +43,13 @@ function RfqCard({
       type="button"
       onClick={onSelect}
       className={`w-full rounded-2xl border p-5 text-left shadow-sm transition hover:border-amber-300 ${
-        selected ? 'border-amber-400 bg-amber-50/40' : 'border-slate-200 bg-white'
+        selected ? 'border-amber-400 bg-amber-50/50 ring-1 ring-amber-200/70' : 'border-slate-200 bg-white'
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-mono text-xs text-slate-500">{rfq.id}</span>
         <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-900">Auction</span>
           {readOnly ? (
             <span
               className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
@@ -63,6 +64,7 @@ function RfqCard({
       <p className="mt-3 text-lg font-semibold text-slate-950">{rfq.quantity} kg</p>
       <p className="mt-1 line-clamp-2 text-sm text-slate-700">{rfq.qualityRequirement}</p>
       <p className="mt-2 text-sm text-slate-500">{rfq.location}</p>
+      <p className="mt-2 line-clamp-2 text-xs text-slate-500">{rfq.notes}</p>
     </button>
   )
 }
@@ -100,6 +102,7 @@ export function DiscoveryWorkspace({ store }: Props) {
   const focusRfq: RFQ | null = focusRfqId ? store.rfqs.find((r) => r.id === focusRfqId) ?? null : null
   const focusBids: Bid[] = focusRfq ? store.bids.filter((b) => b.rfqId === focusRfq.id) : []
   const viewerRole = role ?? 'regulator'
+  const submittedBids = useMemo(() => store.bids.filter((b) => b.status === 'SUBMITTED').length, [store.bids])
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
@@ -142,6 +145,20 @@ export function DiscoveryWorkspace({ store }: Props) {
       </header>
 
       <section className="space-y-4" aria-labelledby="discovery-open-heading">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Open RFQs</p>
+            <p className="mt-1 text-xl font-semibold text-slate-900">{openRfqs.length}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Active bids</p>
+            <p className="mt-1 text-xl font-semibold text-slate-900">{submittedBids}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Closed rounds</p>
+            <p className="mt-1 text-xl font-semibold text-slate-900">{closedRfqs.length}</p>
+          </div>
+        </div>
         <h2 id="discovery-open-heading" className="text-lg font-semibold text-slate-950">
           Open opportunities
         </h2>

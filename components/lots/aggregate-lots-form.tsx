@@ -111,6 +111,9 @@ export function AggregateLotsForm({ onSuccess, lockedActorId, includeFarmerOrigi
       return base
     }
     return base.filter((lot) => {
+      if (lot.childLotIds.length > 0) {
+        return false
+      }
       if (lot.custodianId === lockedActorId || lot.ownerId === lockedActorId) {
         return true
       }
@@ -120,6 +123,22 @@ export function AggregateLotsForm({ onSuccess, lockedActorId, includeFarmerOrigi
       return false
     })
   }, [lots, lockedActorId, includeFarmerOriginLots])
+
+  const selectedWeightTotal = useMemo(
+    () =>
+      eligibleLots
+        .filter((lot) => selected.has(lot.id))
+        .reduce((sum, lot) => sum + lot.weight, 0),
+    [eligibleLots, selected],
+  )
+
+  useEffect(() => {
+    if (selected.size === 0) {
+      setOutputWeight('')
+      return
+    }
+    setOutputWeight(String(selectedWeightTotal))
+  }, [selectedWeightTotal, selected.size])
 
   const farmerPendingValidationCount = useMemo(() => {
     if (!lockedActorId || !includeFarmerOriginLots) {
@@ -273,6 +292,9 @@ export function AggregateLotsForm({ onSuccess, lockedActorId, includeFarmerOrigi
             className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
             required
           />
+          <span className="mt-1 block text-xs text-slate-500">
+            Current selected input total: {selectedWeightTotal} kg
+          </span>
         </label>
         <label className="block text-sm" htmlFor="aggregate-output-form">
           <span className="font-medium text-slate-700">Output form</span>

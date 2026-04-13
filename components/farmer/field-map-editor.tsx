@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { FeatureGroup, MapContainer, TileLayer, useMap } from 'react-leaflet'
+import { FeatureGroup, MapContainer, Polygon, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import 'leaflet-draw'
 
+import type { Field } from '@/lib/domain/types'
 import {
   buildFieldGeometryPayload,
   type LatLngPoint,
@@ -16,6 +17,12 @@ import { DEFAULT_MAP_FALLBACK_CENTER, resolveMapCenterFromGeolocation } from '@/
 
 const OSM_TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+const FIELD_COLORS = ['#f59e0b', '#0ea5e9', '#22c55e', '#ef4444', '#8b5cf6', '#14b8a6', '#f97316', '#3b82f6']
+
+const colorForFarmer = (farmerId: string): string => {
+  const sum = [...farmerId].reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
+  return FIELD_COLORS[sum % FIELD_COLORS.length]
+}
 
 const useFixedLeafletIcons = () => {
   useEffect(() => {
@@ -153,9 +160,17 @@ export type FieldMapEditorProps = {
   mapSessionKey: string
   initialPolygon: LatLngPoint[] | null
   onGeometryChange: (payload: { polygon: LatLngPoint[]; centroid: LatLngPoint; areaSqm: number } | null) => void
+  visibleFields?: Field[]
+  focusFarmerId?: string
 }
 
-export function FieldMapEditor({ mapSessionKey, initialPolygon, onGeometryChange }: FieldMapEditorProps) {
+export function FieldMapEditor({
+  mapSessionKey,
+  initialPolygon,
+  onGeometryChange,
+  visibleFields = [],
+  focusFarmerId,
+}: FieldMapEditorProps) {
   useFixedLeafletIcons()
 
   const [center, setCenter] = useState(DEFAULT_MAP_FALLBACK_CENTER)
@@ -187,6 +202,29 @@ export function FieldMapEditor({ mapSessionKey, initialPolygon, onGeometryChange
       >
         <TileLayer attribution={OSM_ATTR} url={OSM_TILE} />
         <MapRecenter center={center} />
+        {visibleFields.map((field) => {
+          const color = colorForFarmer(field.farmerId)
+          const isFocusedFarmer = focusFarmerId ? field.farmerId === focusFarmerId : false
+          return (
+            <Polygon
+              key={`field-overlay-${field.id}`}
+              positions={field.polygon.map((p) => [p.lat, p.lng])}
+              pathOptions={{
+                color,
+                fillColor: color,
+                fillOpacity: isFocusedFarmer ? 0.3 : 0.14,
+                weight: isFocusedFarmer ? 2 : 1,
+              }}
+            >
+              <Tooltip>
+                <div className="text-xs">
+                  <div className="font-semibold">{field.name}</div>
+                  <div>{field.farmerId}</div>
+                </div>
+              </Tooltip>
+            </Polygon>
+          )
+        })}
         <FieldDrawLayers initialPolygon={initialPolygon} onGeometryChange={onGeometryChange} />
       </MapContainer>
     </div>

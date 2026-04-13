@@ -55,8 +55,8 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
       },
       {
         id: 'create-lot',
-        label: 'Create lot',
-        description: 'Create a new harvest lot snapshot that can later be backed by events.',
+        label: 'Create pick',
+        description: 'Create a new harvest pick snapshot that can later be backed by events.',
         href: '/farmer/lots',
       },
     ],

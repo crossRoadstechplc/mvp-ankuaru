@@ -74,6 +74,27 @@ const sampleLotsAggregatorCustody: Lot[] = [
     createdAt: '2026-04-01T00:00:00.000Z',
     updatedAt: '2026-04-01T00:00:00.000Z',
   },
+  {
+    id: 'lot-ag-used',
+    publicLotCode: 'PLT-AGG-USED',
+    internalUuid: 'u4',
+    traceKey: 't4',
+    form: 'CHERRY',
+    weight: 180,
+    ownerId: 'user-aggregator-001',
+    ownerRole: 'aggregator',
+    custodianId: 'user-aggregator-001',
+    custodianRole: 'aggregator',
+    parentLotIds: [],
+    childLotIds: ['lot-next-role-001'],
+    status: 'ACTIVE',
+    labStatus: 'NOT_REQUIRED',
+    isCollateral: false,
+    integrityStatus: 'OK',
+    validationStatus: 'VALIDATED',
+    createdAt: '2026-04-01T00:00:00.000Z',
+    updatedAt: '2026-04-01T00:00:00.000Z',
+  },
 ]
 
 const sampleLots: Lot[] = [
@@ -244,7 +265,7 @@ describe('AggregateLotsForm', () => {
     fireEvent.click(checkboxes[0]!)
     fireEvent.click(checkboxes[1]!)
 
-    fireEvent.change(screen.getByLabelText(/Output weight/i), { target: { value: '300' } })
+    await waitFor(() => expect(screen.getByLabelText(/Output weight/i)).toHaveValue(300))
 
     const form = container.querySelector('form')
     expect(form).toBeTruthy()
@@ -283,6 +304,7 @@ describe('AggregateLotsForm', () => {
 
     expect(screen.getByText(/PLT-AGG-AAAA/)).toBeInTheDocument()
     expect(screen.getByText(/PLT-AGG-BBBB/)).toBeInTheDocument()
+    expect(screen.queryByText(/PLT-AGG-USED/)).not.toBeInTheDocument()
     expect(screen.queryByText(/PLT-OTHER/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Actor \(ledger\)/)).not.toBeInTheDocument()
   })

@@ -35,14 +35,13 @@ describe('R8 home dashboard structure', () => {
     cleanup()
   })
 
-  it('shows lifecycle strip and workspace next-step grid', () => {
+  it('shows workspace next-step grid', () => {
     render(
       <AuthenticatedAppShell>
         <HomeDashboard store={cloneSeedData()} />
       </AuthenticatedAppShell>,
     )
 
-    expect(screen.getAllByTestId('lot-lifecycle-strip').length).toBeGreaterThanOrEqual(1)
     const main = screen.getByTestId('role-dashboard-main')
     expect(within(main).getByText('Your workspace')).toBeInTheDocument()
     expect(within(main).getByText(/Start here/i)).toBeInTheDocument()

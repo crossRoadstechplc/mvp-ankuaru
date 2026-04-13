@@ -8,6 +8,7 @@ import type { Field } from '@/lib/domain/types'
 import { buildFieldGeometryPayload } from '@/lib/fields/geometry'
 import { useUiStore } from '@/store/ui-store'
 
+import { FieldDistributionMapDynamic } from './field-distribution-map-dynamic'
 import { FieldMapEditorDynamic } from './field-map-editor-dynamic'
 import { FarmerFieldList } from './farmer-field-list'
 
@@ -206,49 +207,10 @@ export function FarmerFieldManagement() {
       </header>
 
       <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Summary</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Your plots</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm">
-              <p className="text-xs text-slate-500">Fields</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">{farmerFields.length}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm">
-              <p className="text-xs text-slate-500">Total vertices</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">
-                {farmerFields.reduce((sum, f) => sum + f.polygon.length, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          {loading ? (
-            <p className="text-sm text-slate-600">Loading fields…</p>
-          ) : loadError ? (
-            <p className="text-sm text-red-700">{loadError}</p>
-          ) : (
-            <FarmerFieldList
-              fields={farmerFields}
-              onEdit={handleEdit}
-              onDelete={(field) => {
-                void handleDelete(field)
-              }}
-            />
-          )}
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">
-              {activeFieldId ? 'Edit field' : 'Create field'}
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Map & form</h2>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">{activeFieldId ? 'Edit field' : 'Create field'}</p>
+            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Create field</h2>
           </div>
           <button
             type="button"
@@ -260,11 +222,14 @@ export function FarmerFieldManagement() {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_280px]">
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Map</h3>
             <FieldMapEditorDynamic
               mapSessionKey={mapSessionKey}
               initialPolygon={initialMapPolygon}
               onGeometryChange={handleGeometryChange}
+              visibleFields={allFields}
+              focusFarmerId={farmerUserId}
             />
             <p className="text-xs leading-5 text-slate-500">
               Use the polygon tool on the right side of the map to draw. Use edit (shape icon) and delete tools to adjust. Only
@@ -272,7 +237,8 @@ export function FarmerFieldManagement() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-4 rounded-2xl bg-slate-50 p-5">
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Summary</h3>
             <label className="block text-sm font-medium text-slate-700">
               Field name
               <input
@@ -321,6 +287,45 @@ export function FarmerFieldManagement() {
               {saving ? 'Saving…' : activeFieldId ? 'Save changes' : 'Save field'}
             </button>
           </div>
+        </div>
+      </section>
+
+      <FieldDistributionMapDynamic fields={allFields} title="Farm distribution (all farmers)" />
+
+      <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Summary</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Your plots</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm">
+              <p className="text-xs text-slate-500">Fields</p>
+              <p className="mt-1 text-xl font-semibold text-slate-900">{farmerFields.length}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm">
+              <p className="text-xs text-slate-500">Total vertices</p>
+              <p className="mt-1 text-xl font-semibold text-slate-900">
+                {farmerFields.reduce((sum, f) => sum + f.polygon.length, 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          {loading ? (
+            <p className="text-sm text-slate-600">Loading fields…</p>
+          ) : loadError ? (
+            <p className="text-sm text-red-700">{loadError}</p>
+          ) : (
+            <FarmerFieldList
+              fields={farmerFields}
+              onEdit={handleEdit}
+              onDelete={(field) => {
+                void handleDelete(field)
+              }}
+            />
+          )}
         </div>
       </section>
     </main>

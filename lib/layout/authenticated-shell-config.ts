@@ -20,13 +20,13 @@ const dedupeByHref = (items: ShellNavItem[]): ShellNavItem[] => {
   return out
 }
 
-/** Ensure Discovery is present and first (requirement: all logged-in roles). */
+/** Ensure Discovery is present and last (requirement: all logged-in roles). */
 export const ensureDiscoveryNav = (items: ShellNavItem[]): ShellNavItem[] => {
   const hasDiscovery = items.some((i) => i.href === DISCOVERY_HREF)
-  const withDiscovery = hasDiscovery ? items : [{ href: DISCOVERY_HREF, label: 'Discovery' }, ...items]
-  const discoveryFirst = withDiscovery.filter((i) => i.href === DISCOVERY_HREF)
+  const withDiscovery = hasDiscovery ? items : [...items, { href: DISCOVERY_HREF, label: 'Discovery' }]
   const rest = withDiscovery.filter((i) => i.href !== DISCOVERY_HREF)
-  return dedupeByHref([...discoveryFirst, ...rest])
+  const discoveryLast = withDiscovery.filter((i) => i.href === DISCOVERY_HREF)
+  return dedupeByHref([...rest, ...discoveryLast])
 }
 
 export const buildAdminSidebarNav = (): ShellNavItem[] =>

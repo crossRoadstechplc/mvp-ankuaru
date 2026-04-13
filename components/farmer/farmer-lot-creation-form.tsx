@@ -182,7 +182,7 @@ export function FarmerLotCreationForm({ farmerUserId, fields, onCreated }: Farme
         disabled={saving}
         className="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
       >
-        {saving ? 'Creating…' : 'Create lot & record PICK'}
+        {saving ? 'Creating…' : 'Create pick & record PICK'}
       </button>
     </form>
   )

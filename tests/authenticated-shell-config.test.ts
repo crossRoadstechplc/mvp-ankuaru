@@ -10,9 +10,9 @@ import {
 } from '@/lib/layout/authenticated-shell-config'
 
 describe('authenticated-shell-config', () => {
-  it('ensureDiscoveryNav prepends Discovery when missing', () => {
+  it('ensureDiscoveryNav appends Discovery when missing', () => {
     const nav = ensureDiscoveryNav([{ href: '/trade', label: 'Trade' }])
-    expect(nav[0]).toEqual({ href: DISCOVERY_HREF, label: 'Discovery' })
+    expect(nav[nav.length - 1]).toEqual({ href: DISCOVERY_HREF, label: 'Discovery' })
   })
 
   it('buildRoleSidebarNav includes Discovery for processor', () => {

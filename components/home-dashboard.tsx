@@ -9,8 +9,6 @@ import { buildRoleDashboardView } from '@/lib/roles/dashboard'
 import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
 
-import { LotLifecycleStrip } from '@/components/lot/lot-lifecycle-strip'
-
 import { RoleSwitcher } from './role-switcher'
 
 type HomeDashboardProps = {
@@ -90,8 +88,6 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
             </p>
           </section>
         )}
-
-        <LotLifecycleStrip />
 
         <section
           className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5"
