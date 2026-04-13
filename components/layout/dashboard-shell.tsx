@@ -6,6 +6,7 @@ import { HiArrowLongLeft, HiArrowLongRight } from 'react-icons/hi2'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 
+import { AnkuaruLogo } from '@/components/branding/ankuaru-logo'
 import { PageBackBar } from '@/components/layout/page-back-bar'
 
 export type DashboardNavItem = {
@@ -56,11 +57,17 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname() ?? ''
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const navWithHome: DashboardNavItem[] = [{ href: '/', label: 'Dashboard home' }, ...navItems]
+  const activeHref =
+    navWithHome
+      .map((item) => item.href)
+      .filter((href) => isNavActive(pathname, href))
+      .sort((a, b) => b.length - a.length)[0] ?? null
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col bg-slate-50/80 md:flex-row">
+    <div className="flex min-h-screen w-full flex-1 flex-col bg-slate-50/80 md:flex-row">
       {sidebarOpen ? (
-        <aside className="flex w-full shrink-0 flex-col border-b border-slate-200 bg-white md:w-60 md:border-b-0 md:border-r">
+        <aside className="flex w-full shrink-0 flex-col border-b border-slate-200 bg-white md:sticky md:top-0 md:h-screen md:w-60 md:self-start md:border-b-0 md:border-r">
           <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-3 py-3 sm:px-4 md:hidden">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Workspace menu</p>
             <button
@@ -74,22 +81,23 @@ export function DashboardShell({
             </button>
           </div>
           <div className="px-3 py-4 sm:px-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">{workspace}</p>
-          {workspaceHint ? <p className="mt-1 text-xs leading-snug text-slate-600">{workspaceHint}</p> : null}
-          <nav className="mt-4 flex max-w-full flex-col gap-0.5" aria-label="Workspace">
-            <Link href="/" className={linkClass(isNavActive(pathname, '/'))}>
-              Dashboard home
-            </Link>
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} className={linkClass(isNavActive(pathname, item.href))}>
-                {item.label}
+            <AnkuaruLogo compact />
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">{workspace}</p>
+            {workspaceHint ? <p className="mt-1 text-xs leading-snug text-slate-600">{workspaceHint}</p> : null}
+            <nav className="mt-4 flex max-w-full flex-col gap-0.5" aria-label="Workspace">
+              <Link href="/" className={linkClass(activeHref === '/')}>
+                Dashboard home
               </Link>
-            ))}
-          </nav>
+              {navItems.map((item) => (
+                <Link key={item.href} href={item.href} className={linkClass(activeHref === item.href)}>
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
         </aside>
       ) : null}
-      <main className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto px-3 py-5 sm:px-5 md:px-6 lg:px-8">
+      <main className="min-h-0 min-w-0 flex-1 overflow-x-auto px-3 py-5 sm:px-5 md:max-h-screen md:overflow-y-auto md:px-6 lg:px-8">
         <div className="mb-4">
           <button
             type="button"

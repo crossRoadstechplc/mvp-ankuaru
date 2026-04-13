@@ -18,6 +18,12 @@ export default async function BankOnboardingDetailPage({
 
   const applicant = store.users.find((u) => u.id === review.applicantUserId)
   const bankUsers = store.users.filter((u) => u.isActive && (u.role === 'bank' || u.role === 'admin'))
+  const applicantLots = applicant ? store.lots.filter((lot) => lot.ownerId === applicant.id).slice(0, 6) : []
+  const applicantRfqs = applicant ? store.rfqs.filter((rfq) => rfq.createdByUserId === applicant.id).slice(0, 6) : []
+  const applicantBids = applicant ? store.bids.filter((bid) => bid.bidderUserId === applicant.id).slice(0, 6) : []
+  const applicantTrades = applicant
+    ? store.trades.filter((trade) => trade.buyerUserId === applicant.id || trade.sellerUserId === applicant.id).slice(0, 6)
+    : []
 
   return (
     <div className="mt-8 space-y-8">
@@ -53,6 +59,45 @@ export default async function BankOnboardingDetailPage({
         ) : (
           <p className="mt-2 text-sm text-amber-800">Applicant record missing from users collection.</p>
         )}
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h2 className="text-lg font-semibold text-slate-950">Applicant 360 profile</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Full contextual data for approval decision (activity, trade participation, and lot ownership).
+        </p>
+        <dl className="mt-4 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+          <div>
+            <dt className="font-medium text-slate-500">Owned lots</dt>
+            <dd className="mt-1">{applicantLots.length}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-slate-500">Published opportunities</dt>
+            <dd className="mt-1">{applicantRfqs.length}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-slate-500">Submitted bids</dt>
+            <dd className="mt-1">{applicantBids.length}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-slate-500">Trades involved</dt>
+            <dd className="mt-1">{applicantTrades.length}</dd>
+          </div>
+        </dl>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm font-medium text-slate-900">Recent owned lots</p>
+            <ul className="mt-2 space-y-1 text-xs text-slate-700">
+              {applicantLots.length === 0 ? <li>No lots owned.</li> : applicantLots.map((lot) => <li key={lot.id}>{lot.publicLotCode} · {lot.status}</li>)}
+            </ul>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm font-medium text-slate-900">Recent opportunities</p>
+            <ul className="mt-2 space-y-1 text-xs text-slate-700">
+              {applicantRfqs.length === 0 ? <li>No opportunities published.</li> : applicantRfqs.map((rfq) => <li key={rfq.id}>{rfq.id} · {rfq.opportunityType ?? 'RFQ'} · {rfq.status}</li>)}
+            </ul>
+          </div>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6">

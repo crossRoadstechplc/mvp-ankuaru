@@ -121,7 +121,7 @@ export const submitLabResult = async (
     }
 
     const lot = store.lots[lotIndex]
-    if (lot.labStatus === 'NOT_REQUIRED') {
+    if (lot.labStatus === 'NOT_REQUIRED' && lot.status !== 'AT_LAB') {
       throw new MasterDataError('This lot does not require lab quality tracking', 400, 'lab_not_applicable')
     }
 

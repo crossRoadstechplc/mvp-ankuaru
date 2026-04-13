@@ -247,6 +247,16 @@ export const collectLiveDataStoreErrors = (value: unknown): string[] => {
   validateCollection(value.rfqs, 'store.rfqs', errors, (item, path, itemErrors) => {
     pushIfFalse(isString(item.id), `${path}.id must be a string`, itemErrors)
     pushIfFalse(isString(item.createdByUserId), `${path}.createdByUserId must be a string`, itemErrors)
+    if (hasOwn(item, 'sourceLotIds') && item.sourceLotIds !== undefined) {
+      pushIfFalse(isStringArray(item.sourceLotIds), `${path}.sourceLotIds must be a string[]`, itemErrors)
+    }
+    if (hasOwn(item, 'credibilityMode') && item.credibilityMode !== undefined) {
+      pushIfFalse(
+        isOneOf(item.credibilityMode, ['STANDARD', 'LAB_VERIFIED', 'LAB_TRANSPORT_VERIFIED']),
+        `${path}.credibilityMode is invalid`,
+        itemErrors,
+      )
+    }
     pushIfFalse(isNumber(item.quantity), `${path}.quantity must be a number`, itemErrors)
     pushIfFalse(isString(item.qualityRequirement), `${path}.qualityRequirement must be a string`, itemErrors)
     pushIfFalse(isString(item.location), `${path}.location must be a string`, itemErrors)
@@ -294,6 +304,9 @@ export const collectLiveDataStoreErrors = (value: unknown): string[] => {
     }
     if (hasOwn(item, 'financingNotes') && item.financingNotes !== undefined) {
       pushIfFalse(isString(item.financingNotes), `${path}.financingNotes must be a string`, itemErrors)
+    }
+    if (hasOwn(item, 'contractSummary') && item.contractSummary !== undefined) {
+      pushIfFalse(isString(item.contractSummary), `${path}.contractSummary must be a string`, itemErrors)
     }
     if (hasOwn(item, 'marginLocked') && item.marginLocked !== undefined) {
       pushIfFalse(isBoolean(item.marginLocked), `${path}.marginLocked must be a boolean`, itemErrors)

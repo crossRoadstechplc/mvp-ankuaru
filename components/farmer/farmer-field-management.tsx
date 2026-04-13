@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Field } from '@/lib/domain/types'
 import { buildFieldGeometryPayload } from '@/lib/fields/geometry'
+import { useLiveDataClientStore } from '@/store/live-data-client-store'
 import { useUiStore } from '@/store/ui-store'
 
 import { FieldDistributionMapDynamic } from './field-distribution-map-dynamic'
@@ -55,9 +56,10 @@ export function FarmerFieldManagement() {
     return 'user-farmer-001'
   }, [searchParams, selectedRole, selectedUserId])
 
-  const [allFields, setAllFields] = useState<Field[]>([])
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const allFields = useLiveDataClientStore((s) => s.fields)
+  const loading = useLiveDataClientStore((s) => s.fieldsLoading)
+  const loadError = useLiveDataClientStore((s) => s.fieldsError)
+  const loadFieldsFromApi = useLiveDataClientStore((s) => s.loadFields)
 
   const [activeFieldId, setActiveFieldId] = useState<string | null>(null)
   const [newSession, setNewSession] = useState(0)
@@ -81,21 +83,12 @@ export function FarmerFieldManagement() {
   const initialMapPolygon = activeField?.polygon ?? null
 
   const loadFields = useCallback(async () => {
-    setLoadError(null)
-    setLoading(true)
-    try {
-      const data = (await fetchJson('/api/fields')) as Field[]
-      setAllFields(data)
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : 'Failed to load fields')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    await loadFieldsFromApi({ force: true })
+  }, [loadFieldsFromApi])
 
   useEffect(() => {
-    void loadFields()
-  }, [loadFields])
+    void loadFieldsFromApi({ force: true })
+  }, [loadFieldsFromApi])
 
   const resetToNew = () => {
     setActiveFieldId(null)

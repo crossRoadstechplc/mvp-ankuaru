@@ -2,6 +2,7 @@
 
 import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import type { Driver, Lot, User, Vehicle } from '@/lib/domain/types'
 
@@ -25,6 +26,7 @@ const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
 }
 
 export function ReceiptForm() {
+  const router = useRouter()
   const [lots, setLots] = useState<Lot[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -95,6 +97,7 @@ export function ReceiptForm() {
         }),
       })
       setLocationStatus('')
+      router.back()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to record receipt')
     } finally {

@@ -152,11 +152,15 @@ export const recordReceipt = async (
       metadata,
     }
 
+    const nextStatus: Lot['status'] = req.nextCustodianRole === 'lab' ? 'AT_LAB' : 'ACTIVE'
+    const nextLabStatus: Lot['labStatus'] = req.nextCustodianRole === 'lab' ? 'PENDING' : lot.labStatus
+
     const updatedLot: Lot = {
       ...lot,
       custodianId: req.nextCustodianId,
       custodianRole: req.nextCustodianRole,
-      status: 'ACTIVE',
+      status: nextStatus,
+      labStatus: nextLabStatus,
       updatedAt: timestamp,
     }
 

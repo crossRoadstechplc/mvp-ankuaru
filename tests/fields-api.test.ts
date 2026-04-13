@@ -29,6 +29,12 @@ const triangle = [
   { lat: 6.15, lng: 38.2 },
 ]
 
+const overlappingTriangle = [
+  { lat: 6.1792, lng: 38.2022 },
+  { lat: 6.1794, lng: 38.2029 },
+  { lat: 6.1787, lng: 38.2027 },
+]
+
 describe('fields API', () => {
   it('creates a field via POST and persists it', async () => {
     const projectRoot = await createTempProjectRoot()
@@ -145,5 +151,58 @@ describe('fields API', () => {
 
     const store = await readLiveDataStore(projectRoot)
     expect(store.fields.some((f) => f.id === created.id)).toBe(false)
+  })
+
+  it('rejects create when polygon overlaps another farmer field', async () => {
+    const projectRoot = await createTempProjectRoot()
+
+    const response = await createField(
+      withProjectRoot(projectRoot, {
+        method: 'POST',
+        body: JSON.stringify({
+          farmerId: 'user-farmer-002',
+          name: 'Overlap attempt',
+          polygon: overlappingTriangle,
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(409)
+    const body = (await response.json()) as { code?: string; error?: string }
+    expect(body.code).toBe('field_overlap_conflict')
+    expect(body.error).toMatch(/overlaps another farmer field/i)
+  })
+
+  it('rejects patch when changing polygon to overlap another farmer field', async () => {
+    const projectRoot = await createTempProjectRoot()
+
+    const createResponse = await createField(
+      withProjectRoot(projectRoot, {
+        method: 'POST',
+        body: JSON.stringify({
+          farmerId: 'user-farmer-002',
+          name: 'Safe field',
+          polygon: [
+            { lat: 6.25, lng: 38.25 },
+            { lat: 6.251, lng: 38.251 },
+            { lat: 6.249, lng: 38.252 },
+          ],
+        }),
+      }),
+    )
+    expect(createResponse.status).toBe(201)
+    const created = (await createResponse.json()) as { id: string }
+
+    const patchResponse = await patchField(
+      withProjectRoot(projectRoot, {
+        method: 'PATCH',
+        body: JSON.stringify({ polygon: overlappingTriangle }),
+      }),
+      { params: { id: created.id } },
+    )
+
+    expect(patchResponse.status).toBe(409)
+    const body = (await patchResponse.json()) as { code?: string }
+    expect(body.code).toBe('field_overlap_conflict')
   })
 })

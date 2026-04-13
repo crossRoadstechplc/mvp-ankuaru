@@ -2,8 +2,9 @@
 
 import type { FormEvent } from 'react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-import type { User } from '@/lib/domain/types'
+import type { LabResult, Lot, User } from '@/lib/domain/types'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
   const response = await fetch(input, {
@@ -25,19 +26,52 @@ const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
 }
 
 export type CreateRfqFormProps = {
-  /** Active exporter or importer accounts allowed to publish RFQs. */
+  /** Active processor/exporter/importer accounts allowed to publish RFQs. */
   publisherUsers: User[]
+  lots: Lot[]
+  labResults?: LabResult[]
+  processedOutputLotIds?: string[]
 }
 
-export function CreateRfqForm({ publisherUsers }: CreateRfqFormProps) {
+export function CreateRfqForm({
+  publisherUsers,
+  lots,
+  labResults = [],
+  processedOutputLotIds = [],
+}: CreateRfqFormProps) {
+  const router = useRouter()
   const [createdByUserId, setCreatedByUserId] = useState(publisherUsers[0]?.id ?? '')
+  const [opportunityType, setOpportunityType] = useState<'RFQ' | 'IOI' | 'AUCTION'>('RFQ')
+  const [credibilityMode, setCredibilityMode] = useState<'STANDARD' | 'LAB_VERIFIED' | 'LAB_TRANSPORT_VERIFIED'>(
+    'STANDARD',
+  )
+  const [lotLabFilter, setLotLabFilter] = useState<'ALL' | 'WITH_LAB_RESULT' | 'WITHOUT_LAB_RESULT'>('ALL')
+  const [sourceLotIds, setSourceLotIds] = useState<string[]>([])
   const [quantity, setQuantity] = useState('')
   const [qualityRequirement, setQualityRequirement] = useState('')
   const [location, setLocation] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [done, setDone] = useState<string | null>(null)
+  const publisherRole = publisherUsers.find((u) => u.id === createdByUserId)?.role
+  const lotsWithLabResultIds = new Set(labResults.map((result) => result.lotId))
+  const processedOutputIds = new Set(processedOutputLotIds)
+  const processorLots = lots.filter(
+    (lot) =>
+      processedOutputIds.has(lot.id) &&
+      lot.ownerId === createdByUserId &&
+      lot.form !== 'BYPRODUCT' &&
+      lot.status !== 'CLOSED',
+  )
+  const filteredProcessorLots = processorLots.filter((lot) => {
+    if (lotLabFilter === 'WITH_LAB_RESULT') {
+      return lotsWithLabResultIds.has(lot.id)
+    }
+    if (lotLabFilter === 'WITHOUT_LAB_RESULT') {
+      return !lotsWithLabResultIds.has(lot.id)
+    }
+    return true
+  })
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -58,27 +92,22 @@ export function CreateRfqForm({ publisherUsers }: CreateRfqFormProps) {
         method: 'POST',
         body: JSON.stringify({
           createdByUserId,
+          opportunityType,
           quantity: qty,
           qualityRequirement: qualityRequirement.trim(),
           location: location.trim(),
           notes: notes.trim() || undefined,
+          sourceLotIds: sourceLotIds.length > 0 ? sourceLotIds : undefined,
+          credibilityMode,
         }),
       })) as { rfq: { id: string } }
-      setDone(res.rfq.id)
+      router.push(`/discovery?created=${encodeURIComponent(res.rfq.id)}`)
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create RFQ')
     } finally {
       setSaving(false)
     }
-  }
-
-  if (done) {
-    return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-950">
-        RFQ created. Reference <span className="font-mono font-semibold">{done}</span>. Counterparties can respond from
-        Discovery or the RFQ list.
-      </div>
-    )
   }
 
   return (
@@ -98,6 +127,79 @@ export function CreateRfqForm({ publisherUsers }: CreateRfqFormProps) {
           ))}
         </select>
       </label>
+      <label className="block text-sm">
+        <span className="font-medium text-slate-700">Opportunity type</span>
+        <select
+          value={opportunityType}
+          onChange={(e) => setOpportunityType(e.target.value as 'RFQ' | 'IOI' | 'AUCTION')}
+          className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+        >
+          <option value="RFQ">RFQ</option>
+          <option value="IOI">IOI</option>
+          <option value="AUCTION">Auction</option>
+        </select>
+      </label>
+
+      {publisherRole === 'processor' ? (
+        <>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-medium text-slate-700">Source processed lots</legend>
+            <label className="block text-sm">
+              <span className="font-medium text-slate-700">Lot filter</span>
+              <select
+                value={lotLabFilter}
+                onChange={(e) =>
+                  setLotLabFilter(e.target.value as 'ALL' | 'WITH_LAB_RESULT' | 'WITHOUT_LAB_RESULT')
+                }
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2"
+              >
+                <option value="ALL">All lots</option>
+                <option value="WITH_LAB_RESULT">Lots with lab results</option>
+                <option value="WITHOUT_LAB_RESULT">Lots with no lab results</option>
+              </select>
+            </label>
+            <div className="max-h-40 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3">
+              {filteredProcessorLots.map((lot) => {
+                const checked = sourceLotIds.includes(lot.id)
+                return (
+                  <label key={lot.id} className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) =>
+                        setSourceLotIds((prev) =>
+                          e.target.checked ? [...prev, lot.id] : prev.filter((id) => id !== lot.id),
+                        )
+                      }
+                    />
+                    <span>
+                      {lot.publicLotCode} ({lot.id}) · {lot.weight} kg ·{' '}
+                      {lotsWithLabResultIds.has(lot.id) ? 'lab attached' : 'no lab result'}
+                    </span>
+                  </label>
+                )
+              })}
+              {filteredProcessorLots.length === 0 ? (
+                <p className="text-sm text-slate-500">No lots match this filter.</p>
+              ) : null}
+            </div>
+          </fieldset>
+          <label className="block text-sm">
+            <span className="font-medium text-slate-700">Credibility mode</span>
+            <select
+              value={credibilityMode}
+              onChange={(e) =>
+                setCredibilityMode(e.target.value as 'STANDARD' | 'LAB_VERIFIED' | 'LAB_TRANSPORT_VERIFIED')
+              }
+              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2"
+            >
+              <option value="STANDARD">Standard</option>
+              <option value="LAB_VERIFIED">Lab verified</option>
+              <option value="LAB_TRANSPORT_VERIFIED">Lab + transport verified</option>
+            </select>
+          </label>
+        </>
+      ) : null}
 
       <label className="block text-sm">
         <span className="font-medium text-slate-700">Desired quantity (kg)</span>

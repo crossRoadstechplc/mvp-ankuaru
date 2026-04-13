@@ -15,7 +15,7 @@ export default async function LabDashboardPage() {
       <PageIntro
         eyebrow="Lab"
         title="Quality queue"
-        lead="Record a result for each lot in queue. Approved results append a LAB_RESULT event and drive export eligibility."
+        lead="Lots assigned by processor/transport appear here for review. Approved results append a LAB_RESULT event and drive export eligibility."
       />
 
       <section aria-labelledby="lab-queue-heading">

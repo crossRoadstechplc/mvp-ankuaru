@@ -247,14 +247,13 @@ export const ROLE_CAPABILITIES: Record<Role, RoleCapability> = {
   },
   regulator: {
     role: 'regulator',
-    label: 'Regulator',
-    description: 'Observe traceability, compliance, and ledger integrity without creating or mutating records.',
+    label: 'Reviewer',
+    description: 'Read-only reviewer workspace for transaction reports, lineage traceability, and integrity oversight.',
     canView: ['users', 'fields', 'lots', 'events', 'rfqs', 'bids', 'trades', 'labResults', 'bankReviews', 'vehicles', 'drivers'],
     canCreate: [],
     canManage: [],
     navigation: [
-      { label: 'Discovery', href: '/discovery' },
-      { label: 'Oversight', href: '/regulator' },
+      { label: 'Reviewer reports', href: '/regulator' },
     ],
     isReadOnly: true,
   },

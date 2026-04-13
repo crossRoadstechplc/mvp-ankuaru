@@ -179,6 +179,12 @@ export type Event = {
 export type RFQ = {
   id: string
   createdByUserId: string
+  /** Commercial intent type shown in Discovery (RFQ, IOI, or Auction). */
+  opportunityType?: 'RFQ' | 'IOI' | 'AUCTION'
+  /** Optional lots the publisher references for this opportunity. */
+  sourceLotIds?: string[]
+  /** Publisher-selected confidence mode; derived badges are computed from ledger evidence. */
+  credibilityMode?: 'STANDARD' | 'LAB_VERIFIED' | 'LAB_TRANSPORT_VERIFIED'
   quantity: number
   qualityRequirement: string
   location: string
@@ -215,6 +221,8 @@ export type Trade = {
   adjustmentAmount?: number
   /** Bank financing terms / simulator notes (not legal advice). */
   financingNotes?: string
+  /** Lightweight generated contract summary for demo/legal context. */
+  contractSummary?: string
   /** After bank approval when margin % is recorded — simulated lock. */
   marginLocked?: boolean
   /** Simulator: narrative that the bank pays the seller in full at approval. */

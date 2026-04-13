@@ -2,7 +2,8 @@ import type { RFQ, Role } from '@/lib/domain/types'
 import { createEventId } from '@/lib/events/ledger'
 import { MasterDataError, createEntity } from '@/lib/master-data/crud'
 import { readLiveDataStore, writeLiveDataStore } from '@/lib/persistence/live-data-store'
-import { isDiscoveryActorRole } from '@/lib/trade-discovery/discovery-permissions'
+import { canCreateDiscoveryRfq } from '@/lib/trade-discovery/discovery-permissions'
+import { assertUsersBankApproved } from '@/lib/trade-discovery/bank-gating'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -37,8 +38,21 @@ const asRequiredNumber = (value: unknown, label: string): number => {
   return value
 }
 
+const asOptionalStringArray = (value: unknown, label: string): string[] | undefined => {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`)
+  }
+  return value.map((entry, index) => asTrimmedString(entry, `${label}[${index}]`))
+}
+
 export type CreateRfqRequest = {
   createdByUserId: string
+  opportunityType?: 'RFQ' | 'IOI' | 'AUCTION'
+  sourceLotIds?: string[]
+  credibilityMode?: 'STANDARD' | 'LAB_VERIFIED' | 'LAB_TRANSPORT_VERIFIED'
   quantity: number
   qualityRequirement: string
   location: string
@@ -49,6 +63,18 @@ export const parseCreateRfqRequest = (value: unknown): CreateRfqRequest => {
   const input = asRecord(value, 'rfqCreate')
   return {
     createdByUserId: asTrimmedString(input.createdByUserId, 'rfqCreate.createdByUserId'),
+    opportunityType:
+      input.opportunityType === undefined
+        ? undefined
+        : (asTrimmedString(input.opportunityType, 'rfqCreate.opportunityType') as 'RFQ' | 'IOI' | 'AUCTION'),
+    sourceLotIds: asOptionalStringArray(input.sourceLotIds, 'rfqCreate.sourceLotIds'),
+    credibilityMode:
+      input.credibilityMode === undefined
+        ? undefined
+        : (asTrimmedString(input.credibilityMode, 'rfqCreate.credibilityMode') as
+            | 'STANDARD'
+            | 'LAB_VERIFIED'
+            | 'LAB_TRANSPORT_VERIFIED'),
     quantity: asRequiredNumber(input.quantity, 'rfqCreate.quantity'),
     qualityRequirement: asTrimmedString(input.qualityRequirement, 'rfqCreate.qualityRequirement'),
     location: asTrimmedString(input.location, 'rfqCreate.location'),
@@ -57,7 +83,7 @@ export const parseCreateRfqRequest = (value: unknown): CreateRfqRequest => {
 }
 
 /**
- * Publish an RFQ on the discovery board. Only active exporter or importer users may create RFQs.
+ * Publish an RFQ on the discovery board. Active processor/exporter/importer users may create RFQs.
  */
 export const createDiscoveryRfq = async (
   payload: unknown,
@@ -70,8 +96,37 @@ export const createDiscoveryRfq = async (
     if (!user?.isActive) {
       throw new MasterDataError('User not found', 404, 'missing_entity')
     }
-    if (!isDiscoveryActorRole(user.role)) {
-      throw new MasterDataError('Only exporter or importer users can create RFQs', 403, 'forbidden_role')
+    if (!canCreateDiscoveryRfq(user.role)) {
+      throw new MasterDataError('Only processor, exporter, or importer users can create RFQs', 403, 'forbidden_role')
+    }
+    assertUsersBankApproved(store.users, store.bankReviews, [req.createdByUserId], 'RFQ creation')
+    if (req.credibilityMode && !['STANDARD', 'LAB_VERIFIED', 'LAB_TRANSPORT_VERIFIED'].includes(req.credibilityMode)) {
+      throw new MasterDataError('Invalid credibility mode', 400, 'invalid_payload')
+    }
+    if (req.opportunityType && !['RFQ', 'IOI', 'AUCTION'].includes(req.opportunityType)) {
+      throw new MasterDataError('Invalid opportunity type', 400, 'invalid_payload')
+    }
+    if (user.role === 'processor' && (!req.sourceLotIds || req.sourceLotIds.length === 0)) {
+      throw new MasterDataError('Processor RFQs must reference at least one processed source lot', 400, 'missing_source_lots')
+    }
+    if (req.sourceLotIds?.length) {
+      for (const lotId of req.sourceLotIds) {
+        const lot = store.lots.find((entry) => entry.id === lotId)
+        if (!lot) {
+          throw new MasterDataError(`Source lot ${lotId} not found`, 404, 'missing_entity')
+        }
+        if (lot.ownerId !== req.createdByUserId) {
+          throw new MasterDataError(
+            `Source lot ${lotId} is not owned by the opportunity creator`,
+            403,
+            'lot_not_owned',
+          )
+        }
+        const hasProcess = store.events.some((event) => event.type === 'PROCESS' && event.outputLotIds.includes(lotId))
+        if (!hasProcess) {
+          throw new MasterDataError(`Source lot ${lotId} is not a processed output`, 400, 'invalid_source_lot')
+        }
+      }
     }
 
     const actorRole = user.role as Role
@@ -80,6 +135,9 @@ export const createDiscoveryRfq = async (
       'rfqs',
       {
         createdByUserId: req.createdByUserId,
+        opportunityType: req.opportunityType ?? 'RFQ',
+        sourceLotIds: req.sourceLotIds,
+        credibilityMode: req.credibilityMode ?? 'STANDARD',
         quantity: req.quantity,
         qualityRequirement: req.qualityRequirement,
         location: req.location,

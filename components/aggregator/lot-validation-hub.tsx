@@ -1,29 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import type { Lot } from '@/lib/domain/types'
 import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
-
-const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
-  const response = await fetch(input, {
-    ...init,
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-  })
-  const data: unknown = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    const message =
-      typeof data === 'object' && data !== null && 'error' in data && typeof (data as { error: unknown }).error === 'string'
-        ? (data as { error: string }).error
-        : `Request failed (${response.status})`
-    throw new Error(message)
-  }
-  return data
-}
+import { useLiveDataClientStore } from '@/store/live-data-client-store'
 
 const farmerOriginBuckets = (lots: Lot[]) => {
   const held = lots.filter(lotIsFarmerOriginHeldAtFarm)
@@ -57,34 +39,14 @@ function LotRow({ lot }: { lot: Lot }) {
 }
 
 export function LotValidationHub() {
-  const [lots, setLots] = useState<Lot[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const lots = useLiveDataClientStore((s) => s.lots)
+  const loading = useLiveDataClientStore((s) => s.lotsLoading)
+  const error = useLiveDataClientStore((s) => s.lotsError)
+  const loadLots = useLiveDataClientStore((s) => s.loadLots)
 
   useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      setLoading(true)
-      try {
-        const rows = (await fetchJson('/api/lots')) as Lot[]
-        if (!cancelled) {
-          setLots(rows)
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Failed to load lots')
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-    void load()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    void loadLots({ force: true })
+  }, [loadLots])
 
   const { awaiting, validated, rejected } = useMemo(() => farmerOriginBuckets(lots), [lots])
 

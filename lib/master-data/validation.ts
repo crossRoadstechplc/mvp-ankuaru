@@ -413,6 +413,20 @@ export const parseRfqCreateInput = (value: unknown): Omit<RFQ, 'id' | 'createdAt
   const input = asRecord(value, 'rfq')
   return {
     createdByUserId: asTrimmedString(input.createdByUserId, 'rfq.createdByUserId'),
+    opportunityType: hasOwn(input, 'opportunityType')
+      ? asOneOf(input.opportunityType, 'rfq.opportunityType', ['RFQ', 'IOI', 'AUCTION'] as const)
+      : undefined,
+    sourceLotIds:
+      hasOwn(input, 'sourceLotIds') && input.sourceLotIds !== undefined
+        ? asStringArray(input.sourceLotIds, 'rfq.sourceLotIds')
+        : undefined,
+    credibilityMode: hasOwn(input, 'credibilityMode')
+      ? asOneOf(
+          input.credibilityMode,
+          'rfq.credibilityMode',
+          ['STANDARD', 'LAB_VERIFIED', 'LAB_TRANSPORT_VERIFIED'] as const,
+        )
+      : undefined,
     quantity: asRequiredNumber(input.quantity, 'rfq.quantity'),
     qualityRequirement: asTrimmedString(input.qualityRequirement, 'rfq.qualityRequirement'),
     location: asTrimmedString(input.location, 'rfq.location'),
@@ -427,6 +441,19 @@ export const parseRfqUpdateInput = (value: unknown): Partial<Omit<RFQ, 'id' | 'c
 
   if (hasOwn(input, 'createdByUserId')) {
     patch.createdByUserId = asTrimmedString(input.createdByUserId, 'rfq.createdByUserId')
+  }
+  if (hasOwn(input, 'opportunityType')) {
+    patch.opportunityType = asOneOf(input.opportunityType, 'rfq.opportunityType', ['RFQ', 'IOI', 'AUCTION'] as const)
+  }
+  if (hasOwn(input, 'sourceLotIds')) {
+    patch.sourceLotIds = asStringArray(input.sourceLotIds, 'rfq.sourceLotIds')
+  }
+  if (hasOwn(input, 'credibilityMode')) {
+    patch.credibilityMode = asOneOf(
+      input.credibilityMode,
+      'rfq.credibilityMode',
+      ['STANDARD', 'LAB_VERIFIED', 'LAB_TRANSPORT_VERIFIED'] as const,
+    )
   }
   if (hasOwn(input, 'quantity')) {
     patch.quantity = asRequiredNumber(input.quantity, 'rfq.quantity')
@@ -501,6 +528,7 @@ export const parseTradeCreateInput = (value: unknown): Omit<Trade, 'id' | 'creat
     financedAmount: asOptionalNumber(input.financedAmount, 'trade.financedAmount'),
     adjustmentAmount: asOptionalNumber(input.adjustmentAmount, 'trade.adjustmentAmount'),
     financingNotes: asOptionalString(input.financingNotes, 'trade.financingNotes'),
+    contractSummary: asOptionalString(input.contractSummary, 'trade.contractSummary'),
     marginLocked: asOptionalBoolean(input.marginLocked, 'trade.marginLocked'),
     simulationSellerPaidByBank: asOptionalBoolean(input.simulationSellerPaidByBank, 'trade.simulationSellerPaidByBank'),
     simulationBuyerMarginOnlyUpfront: asOptionalBoolean(
@@ -557,6 +585,9 @@ export const parseTradeUpdateInput = (value: unknown): Partial<Omit<Trade, 'id' 
   }
   if (hasOwn(input, 'financingNotes')) {
     patch.financingNotes = asOptionalString(input.financingNotes, 'trade.financingNotes')
+  }
+  if (hasOwn(input, 'contractSummary')) {
+    patch.contractSummary = asOptionalString(input.contractSummary, 'trade.contractSummary')
   }
   if (hasOwn(input, 'marginLocked')) {
     patch.marginLocked = asOptionalBoolean(input.marginLocked, 'trade.marginLocked')

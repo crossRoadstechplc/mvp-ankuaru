@@ -260,7 +260,7 @@ export function ProcessLotsForm({ onSuccess, lockedActorId, restrictToProcessRea
           <option value="">Select…</option>
           {eligibleLots.map((lot) => (
             <option key={lot.id} value={lot.id}>
-              {lot.publicLotCode} — {lot.weight} kg ({lot.form})
+              {lot.publicLotCode} — ID {lot.id} — {lot.weight} kg ({lot.form}) · {lot.status}
             </option>
           ))}
         </select>
@@ -268,7 +268,8 @@ export function ProcessLotsForm({ onSuccess, lockedActorId, restrictToProcessRea
 
       {sourceLot ? (
         <p className="text-sm text-slate-600">
-          Available on snapshot: <strong>{sourceLot.weight} kg</strong>. Input weight cannot exceed this.
+          Selected lot: <strong>{sourceLot.publicLotCode}</strong> (<span className="font-mono">{sourceLot.id}</span>) ·
+          available on snapshot: <strong> {sourceLot.weight} kg</strong>. Input weight cannot exceed this.
         </p>
       ) : null}
 

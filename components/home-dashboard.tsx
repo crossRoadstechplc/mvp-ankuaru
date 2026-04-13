@@ -8,6 +8,7 @@ import type { LiveDataStore } from '@/lib/domain/types'
 import { buildRoleDashboardView } from '@/lib/roles/dashboard'
 import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
+import { LotValidationHub } from '@/components/aggregator/lot-validation-hub'
 
 import { RoleSwitcher } from './role-switcher'
 
@@ -67,6 +68,7 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
 
   const firstAction = roleView.actions[0]
   const firstModule = roleView.modules[0]
+  const showAggregatorValidationFirst = selectedRole === 'aggregator'
 
   return (
     <div className="flex w-full max-w-none flex-col gap-8">
@@ -88,6 +90,19 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
             </p>
           </section>
         )}
+
+        {showAggregatorValidationFirst ? (
+          <section className="rounded-[2rem] border border-amber-200 bg-amber-50/40 p-6 shadow-sm shadow-black/5">
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-amber-800">Aggregator priority</p>
+            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Lot validation</h2>
+            <p className="mt-2 text-sm text-slate-700">
+              Validate farmer-origin picks first. Cleared lots then appear in aggregation workflows.
+            </p>
+            <div className="mt-5">
+              <LotValidationHub />
+            </div>
+          </section>
+        ) : null}
 
         <section
           className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5"

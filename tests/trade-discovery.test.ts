@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { POST as postBid } from '@/app/api/trade-discovery/bid/route'
 import { POST as postRfq } from '@/app/api/trade-discovery/rfq/route'
 import { POST as postSelect } from '@/app/api/trade-discovery/select-bid/route'
-import { readLiveDataStore } from '@/lib/persistence/live-data-store'
+import { readLiveDataStore, writeLiveDataStore } from '@/lib/persistence/live-data-store'
 
 import { withProjectRoot } from './helpers/api-request'
 import { cleanupTempProjectRoots, createTempProjectRoot } from './helpers/temp-project'
@@ -16,6 +16,7 @@ afterEach(async () => {
 
 const exporterSession = { userId: 'user-exporter-001', role: 'exporter' as const }
 const importerSession = { userId: 'user-importer-001', role: 'importer' as const }
+const processorSession = { userId: 'user-processor-001', role: 'processor' as const }
 const aggregatorSession = { userId: 'user-aggregator-001', role: 'aggregator' as const }
 const farmerSession = { userId: 'user-farmer-001', role: 'farmer' as const }
 
@@ -102,6 +103,30 @@ describe('trade discovery API', () => {
     expect(body.rfq.status).toBe('OPEN')
   })
 
+  it('rejects RFQ creation when creator is not bank-approved', async () => {
+    const projectRoot = await createTempProjectRoot()
+    const res = await postRfq(
+      withProjectRoot(
+        projectRoot,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            createdByUserId: 'user-processor-001',
+            sourceLotIds: ['lot-green-001'],
+            credibilityMode: 'LAB_VERIFIED',
+            quantity: 250,
+            qualityRequirement: 'Processed and lab-checked lot',
+            location: 'Addis',
+          }),
+        },
+        processorSession,
+      ),
+    )
+    expect(res.status).toBe(403)
+    const body = (await res.json()) as { code: string }
+    expect(body.code).toBe('bank_approval_required')
+  })
+
   it('creates a bid and links lots', async () => {
     const projectRoot = await createTempProjectRoot()
     const rfqRes = await postRfq(
@@ -175,6 +200,49 @@ describe('trade discovery API', () => {
       ),
     )
     expect(bidRes.status).toBe(403)
+  })
+
+  it('rejects bid when RFQ owner is not bank-approved', async () => {
+    const projectRoot = await createTempProjectRoot()
+    const rfqRes = await postRfq(
+      withProjectRoot(
+        projectRoot,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            createdByUserId: 'user-importer-001',
+            quantity: 100,
+            qualityRequirement: 'x',
+            location: 'y',
+          }),
+        },
+        importerSession,
+      ),
+    )
+    expect(rfqRes.status).toBe(201)
+    const { rfq } = (await rfqRes.json()) as { rfq: { id: string } }
+    const store = await readLiveDataStore(projectRoot)
+    store.bankReviews = store.bankReviews.filter((review) => review.applicantUserId !== 'user-importer-001')
+    await writeLiveDataStore(store, projectRoot)
+
+    const bidRes = await postBid(
+      withProjectRoot(
+        projectRoot,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            rfqId: rfq.id,
+            bidderUserId: 'user-importer-001',
+            price: 3,
+            lotIds: ['lot-green-001'],
+          }),
+        },
+        importerSession,
+      ),
+    )
+    expect(bidRes.status).toBe(403)
+    const body = (await bidRes.json()) as { code: string }
+    expect(body.code).toBe('bank_approval_required')
   })
 
   it('on winning bid selection creates trade with RFQ and bid links', async () => {

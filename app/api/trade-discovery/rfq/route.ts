@@ -4,7 +4,7 @@ import { resolveBodyUserIdForAdminOrSelf } from '@/lib/auth/api-guards'
 import { MasterDataError, resolveProjectRootFromRequest } from '@/lib/master-data/crud'
 import { createDiscoveryRfq, parseCreateRfqRequest } from '@/lib/trade-discovery/create-rfq'
 
-const DISCOVERY_USER_ROLES = ['exporter', 'importer'] as const
+const DISCOVERY_USER_ROLES = ['processor', 'exporter', 'importer'] as const
 
 const toErrorResponse = (error: unknown) => {
   if (error instanceof MasterDataError) {

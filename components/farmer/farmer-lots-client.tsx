@@ -4,20 +4,12 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Field, Lot } from '@/lib/domain/types'
+import { useLiveDataClientStore } from '@/store/live-data-client-store'
 import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
 
 import { FarmerLotCreationForm } from './farmer-lot-creation-form'
 import { FarmerOriginLotsList } from './farmer-origin-lots-list'
-
-const fetchJson = async (input: RequestInfo) => {
-  const response = await fetch(input)
-  if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`)
-  }
-  return response.json() as Promise<unknown>
-}
 
 export function FarmerLotsClient() {
   const searchParams = useSearchParams()
@@ -43,32 +35,22 @@ export function FarmerLotsClient() {
     return 'user-farmer-001'
   }, [searchParams, selectedRole, selectedUserId, sessionRole, sessionUserId])
 
-  const [fields, setFields] = useState<Field[]>([])
-  const [lots, setLots] = useState<Lot[]>([])
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const fields = useLiveDataClientStore((s) => s.fields)
+  const lots = useLiveDataClientStore((s) => s.lots)
+  const loading = useLiveDataClientStore((s) => s.fieldsLoading || s.lotsLoading)
+  const fieldError = useLiveDataClientStore((s) => s.fieldsError)
+  const lotError = useLiveDataClientStore((s) => s.lotsError)
+  const loadAll = useLiveDataClientStore((s) => s.loadAll)
   const [banner, setBanner] = useState<string | null>(null)
+  const loadError = fieldError ?? lotError
 
   const reload = useCallback(async () => {
-    setLoadError(null)
-    setLoading(true)
-    try {
-      const [fieldData, lotData] = await Promise.all([
-        fetchJson('/api/fields') as Promise<Field[]>,
-        fetchJson('/api/lots') as Promise<Lot[]>,
-      ])
-      setFields(fieldData)
-      setLots(lotData)
-    } catch (e) {
-      setLoadError(e instanceof Error ? e.message : 'Failed to load data')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    await loadAll({ force: true })
+  }, [loadAll])
 
   useEffect(() => {
-    void reload()
-  }, [reload])
+    void loadAll({ force: true })
+  }, [loadAll])
 
   const listMode = isFarmerSession ? 'single-farmer' : 'all-farmers-origin'
 

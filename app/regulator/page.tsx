@@ -12,9 +12,9 @@ export default async function RegulatorOversightPage() {
   return (
     <div className="space-y-10">
       <PageIntro
-        eyebrow="Regulator"
-        title="Oversight"
-        lead="Read-only, redacted trade context. Open a lot from the list below for full ledger timelines."
+        eyebrow="Reviewer"
+        title="Reports and traceability oversight"
+        lead="Read-only reporting workspace: transaction summaries, lineage navigation, and trace evidence review."
       />
 
       <RegulatorOversightPanel trades={trades} />

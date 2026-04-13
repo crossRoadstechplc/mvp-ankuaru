@@ -4,12 +4,15 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ROLE_VALUES } from '@/lib/domain/constants'
-import type { Role, User } from '@/lib/domain/types'
+import type { BankReview, Role, User } from '@/lib/domain/types'
+import { isBankApprovedUser } from '@/lib/trade-discovery/bank-approval'
 import { useSessionStore } from '@/store/session-store'
 
 type EligibleUsersResponse = {
   users: User[]
 }
+
+const BANK_RELEVANT_ROLES = new Set<Role>(['processor', 'exporter', 'importer'])
 
 const roleOrder = new Map<Role, number>(ROLE_VALUES.map((r, i) => [r, i]))
 
@@ -17,20 +20,31 @@ export function LoginClient() {
   const router = useRouter()
   const setSession = useSessionStore((s) => s.setSession)
   const [users, setUsers] = useState<User[] | null>(null)
+  const [bankReviews, setBankReviews] = useState<BankReview[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setError(null)
     try {
-      const res = await fetch('/api/auth/eligible-users', { cache: 'no-store' })
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`)
+      const [usersRes, bankReviewsRes] = await Promise.all([
+        fetch('/api/auth/eligible-users', { cache: 'no-store' }),
+        fetch('/api/bankReviews', { cache: 'no-store' }),
+      ])
+      if (!usersRes.ok) {
+        throw new Error(`HTTP ${usersRes.status}`)
       }
-      const data = (await res.json()) as EligibleUsersResponse
+      const data = (await usersRes.json()) as EligibleUsersResponse
       setUsers(data.users)
+      if (bankReviewsRes.ok) {
+        const reviews = (await bankReviewsRes.json()) as BankReview[]
+        setBankReviews(reviews)
+      } else {
+        setBankReviews([])
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load users')
       setUsers([])
+      setBankReviews([])
     }
   }, [])
 
@@ -82,19 +96,30 @@ export function LoginClient() {
 
   return (
     <ul
-      className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+      className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       data-testid="login-user-list"
     >
       {sortedUsers.map((user) => (
         <li key={user.id} className="min-w-0">
-          <article className="flex h-full min-h-[11rem] flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <article className="group flex h-full min-h-[12rem] flex-col rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/60">
+            <div className="flex min-h-0 flex-1 flex-col gap-2.5">
               <p className="truncate text-base font-semibold text-slate-950 sm:text-lg" title={user.name}>
                 {user.name}
               </p>
-              <span className="inline-flex w-fit rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium capitalize text-amber-900">
+              <span className="inline-flex w-fit rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium capitalize text-amber-900">
                 {user.role}
               </span>
+              {BANK_RELEVANT_ROLES.has(user.role) ? (
+                <span
+                  className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
+                    isBankApprovedUser(user.id, bankReviews)
+                      ? 'bg-emerald-100 text-emerald-900'
+                      : 'bg-rose-100 text-rose-900'
+                  }`}
+                >
+                  {isBankApprovedUser(user.id, bankReviews) ? 'Bank approved' : 'Bank approval required'}
+                </span>
+              ) : null}
               {user.email ? (
                 <p className="line-clamp-2 break-all text-xs text-slate-600 sm:text-sm" title={user.email}>
                   {user.email}
@@ -104,7 +129,7 @@ export function LoginClient() {
             <button
               type="button"
               onClick={() => onLogin(user)}
-              className="mt-3 w-full rounded-full bg-slate-950 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              className="mt-4 w-full rounded-full bg-slate-950 py-2.5 text-sm font-medium text-white transition group-hover:bg-amber-800"
               data-testid={`login-as-${user.id}`}
             >
               Continue

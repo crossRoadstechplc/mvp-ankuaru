@@ -6,6 +6,18 @@ export default async function TransportDashboardPage() {
   const store = await initializeLiveDataStore()
   const inTransit = store.lots.filter((l) => l.status === 'IN_TRANSIT')
   const transportEvents = store.events.filter((e) => e.type === 'DISPATCH' || e.type === 'RECEIPT').slice(-12)
+  const trackedTrips = inTransit.map((lot) => {
+    const latestDispatch = [...store.events]
+      .reverse()
+      .find((event) => event.type === 'DISPATCH' && event.outputLotIds.includes(lot.id))
+    return {
+      lot,
+      vehicle: typeof latestDispatch?.metadata?.plateNumber === 'string' ? latestDispatch.metadata.plateNumber : 'N/A',
+      driver: typeof latestDispatch?.metadata?.driverName === 'string' ? latestDispatch.metadata.driverName : 'N/A',
+      location:
+        typeof latestDispatch?.metadata?.locationStatus === 'string' ? latestDispatch.metadata.locationStatus : 'No update',
+    }
+  })
 
   return (
     <div className="mt-8 space-y-10">
@@ -46,6 +58,22 @@ export default async function TransportDashboardPage() {
                 <Link href={`/lots/${lot.id}`} className="ml-2 text-sky-800 underline-offset-2 hover:underline">
                   Lot timeline
                 </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-xl font-semibold text-slate-950">Fleet tracking snapshot</h2>
+        {trackedTrips.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-600">No active fleet assignments yet.</p>
+        ) : (
+          <ul className="mt-4 space-y-2 text-sm text-slate-700">
+            {trackedTrips.map((trip) => (
+              <li key={trip.lot.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <span className="font-medium text-slate-900">{trip.lot.publicLotCode}</span> · vehicle {trip.vehicle} ·
+                driver {trip.driver} · {trip.location}
               </li>
             ))}
           </ul>

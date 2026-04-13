@@ -86,6 +86,7 @@ export function LabResultForm({ lot, labUsers, onSuccess }: LabResultFormProps) 
       })
       router.refresh()
       onSuccess?.()
+      router.back()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {

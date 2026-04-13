@@ -28,7 +28,7 @@ describe('DiscoveryWorkspace', () => {
       currentUserName: 'Alemu Bekele',
     })
     render(<DiscoveryWorkspace store={store} />)
-    expect(screen.getByText(/Read-only — exporter \/ importer actions only/i)).toBeInTheDocument()
+    expect(screen.getByText(/Read-only — processor \/ exporter \/ importer posting only/i)).toBeInTheDocument()
     expect(screen.queryByText('My actions')).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'New RFQ' })).not.toBeInTheDocument()
     expect(screen.getAllByTestId('discovery-rfq-view-only-badge').length).toBeGreaterThan(0)

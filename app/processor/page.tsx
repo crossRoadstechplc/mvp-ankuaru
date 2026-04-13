@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { SendToLabForm } from '@/components/processor/send-to-lab-form'
 import { ProcessorWorkspace } from '@/components/processor/processor-workspace'
 import { btnSecondaryClass } from '@/components/ui/button-styles'
 
@@ -25,6 +26,7 @@ export default function ProcessorHomePage() {
           Home dashboard
         </Link>
       </div>
+      <SendToLabForm />
       <ProcessorWorkspace />
     </div>
   )

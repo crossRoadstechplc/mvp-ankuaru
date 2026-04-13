@@ -402,14 +402,28 @@ const buildModulesByRole = (
       return [
         {
           id: 'oversight',
-          title: 'Read-only snapshots',
-          summary: `${store.lots.length} lots · ${store.events.length} events · open Oversight for trades`,
-          items: makeItems(store.lots, (lot) => ({
-            id: lot.id,
-            label: lot.publicLotCode,
-            detail: `${lot.status} · integrity ${lot.integrityStatus}`,
-            href: `/lots/${lot.id}`,
-          })),
+          title: 'Reviewer reports',
+          summary: `${store.trades.length} trades · ${store.rfqs.length} opportunities · ${store.events.length} ledger events`,
+          items: [
+            {
+              id: 'tx-report',
+              label: 'Transaction report',
+              detail: `${store.trades.length} trade records across statuses`,
+              href: '/regulator',
+            },
+            {
+              id: 'lineage-report',
+              label: 'Lineage & traceability',
+              detail: `${store.lots.length} lots available for deep lineage review`,
+              href: store.lots[0] ? `/lots/${store.lots[0].id}/lineage` : '/regulator',
+            },
+            {
+              id: 'event-audit',
+              label: 'Ledger decoding',
+              detail: `${store.events.length} event records, immutable read-only audit`,
+              href: store.lots[0] ? `/lots/${store.lots[0].id}` : '/regulator',
+            },
+          ],
         },
       ]
   }

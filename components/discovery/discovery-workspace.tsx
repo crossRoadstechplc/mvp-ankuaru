@@ -8,8 +8,9 @@ import { redactBidForRole } from '@/lib/trade-discovery/commercial-visibility'
 import {
   canCreateDiscoveryRfq,
   canSubmitDiscoveryBid,
-  isDiscoveryActorRole,
+  isDiscoveryRfqPublisherRole,
 } from '@/lib/trade-discovery/discovery-permissions'
+import { evaluateRfqCredibility } from '@/lib/trade-discovery/credibility'
 import { useSessionStore } from '@/store/session-store'
 
 type Props = {
@@ -49,7 +50,9 @@ function RfqCard({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-mono text-xs text-slate-500">{rfq.id}</span>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-900">Auction</span>
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-900">
+            {rfq.opportunityType ?? 'RFQ'}
+          </span>
           {readOnly ? (
             <span
               className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
@@ -72,8 +75,8 @@ function RfqCard({
 export function DiscoveryWorkspace({ store }: Props) {
   const role = useSessionStore((s) => s.currentUserRole)
   const userId = useSessionStore((s) => s.currentUserId)
-  const isActor = isDiscoveryActorRole(role)
-  const readOnly = !isActor
+  const isPublisher = isDiscoveryRfqPublisherRole(role)
+  const readOnly = !isPublisher
 
   const [focusRfqId, setFocusRfqId] = useState<string | null>(null)
 
@@ -103,6 +106,13 @@ export function DiscoveryWorkspace({ store }: Props) {
   const focusBids: Bid[] = focusRfq ? store.bids.filter((b) => b.rfqId === focusRfq.id) : []
   const viewerRole = role ?? 'regulator'
   const submittedBids = useMemo(() => store.bids.filter((b) => b.status === 'SUBMITTED').length, [store.bids])
+  const credibilityByRfqId = useMemo(
+    () =>
+      new Map(
+        store.rfqs.map((rfq) => [rfq.id, evaluateRfqCredibility(rfq, store.lots, store.events, store.labResults)]),
+      ),
+    [store.rfqs, store.lots, store.events, store.labResults],
+  )
 
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 sm:px-6 lg:px-8">
@@ -111,17 +121,17 @@ export function DiscoveryWorkspace({ store }: Props) {
         <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Marketplace & opportunities</h1>
         <p className="max-w-2xl text-sm leading-6 text-slate-600">
           {readOnly
-            ? 'Shared RFQ board — everyone signed in can browse open and closed opportunities. Publishing, bidding, and selecting a winner are limited to exporter and importer accounts.'
-            : 'Publish RFQs, submit bids, and select winners. Other roles see the same board with view-only controls.'}
+            ? 'Shared RFQ board — everyone signed in can browse open and closed opportunities. Publishing is limited to processor, exporter, and importer accounts.'
+            : 'Publish RFQs and monitor market responses. Bid/selection actions are handled by exporter/importer accounts.'}
         </p>
         <p className="max-w-2xl text-xs leading-5 text-slate-500">
-          This MVP uses firm bids only — there is no separate IOI (indication of interest) or non-binding offer
-          workflow.
+          Opportunity cards can be tagged as RFQ, IOI, or Auction. Bid execution still runs through the same trade flow
+          in this MVP.
         </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
           {readOnly ? (
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
-              Read-only — exporter / importer actions only
+              Read-only — processor / exporter / importer posting only
             </span>
           ) : (
             <>
@@ -147,7 +157,7 @@ export function DiscoveryWorkspace({ store }: Props) {
       <section className="space-y-4" aria-labelledby="discovery-open-heading">
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Open RFQs</p>
+            <p className="text-xs uppercase tracking-wide text-slate-500">Open opportunities</p>
             <p className="mt-1 text-xl font-semibold text-slate-900">{openRfqs.length}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -164,25 +174,27 @@ export function DiscoveryWorkspace({ store }: Props) {
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {openRfqs.map((rfq) => (
-            <RfqCard
-              key={rfq.id}
-              rfq={rfq}
-              selected={focusRfqId === rfq.id}
-              onSelect={() => setFocusRfqId(rfq.id)}
-              readOnly={readOnly}
-            />
+            <div key={rfq.id} className="space-y-2">
+              <RfqCard
+                rfq={rfq}
+                selected={focusRfqId === rfq.id}
+                onSelect={() => setFocusRfqId(rfq.id)}
+                readOnly={readOnly}
+              />
+              <p className="px-1 text-xs text-slate-600">{credibilityByRfqId.get(rfq.id)?.label ?? 'Credibility pending'}</p>
+            </div>
           ))}
         </div>
         {openRfqs.length === 0 ? <p className="text-sm text-slate-500">No open RFQs.</p> : null}
       </section>
 
-      {isActor ? (
+      {isPublisher ? (
         <section className="space-y-4" aria-labelledby="discovery-my-actions-heading">
           <h2 id="discovery-my-actions-heading" className="text-lg font-semibold text-slate-950">
             My actions
           </h2>
           <p className="text-sm text-slate-600">
-            RFQs you published and bids you submitted (exporter / importer only).
+            RFQs you published and bids you submitted (bids remain exporter/importer actions).
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -274,6 +286,9 @@ export function DiscoveryWorkspace({ store }: Props) {
               <dd className="font-medium">{focusRfq.location}</dd>
             </div>
           </dl>
+          <p className="mt-3 text-xs text-slate-600">
+            Credibility signal: <strong>{credibilityByRfqId.get(focusRfq.id)?.label ?? 'Credibility pending'}</strong>
+          </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={`/trade/rfqs/${focusRfq.id}`}

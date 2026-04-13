@@ -2,7 +2,8 @@ import type { Bid, Role } from '@/lib/domain/types'
 import { createEventId } from '@/lib/events/ledger'
 import { MasterDataError, createEntity } from '@/lib/master-data/crud'
 import { readLiveDataStore, writeLiveDataStore } from '@/lib/persistence/live-data-store'
-import { isDiscoveryActorRole } from '@/lib/trade-discovery/discovery-permissions'
+import { isDiscoveryBidderRole } from '@/lib/trade-discovery/discovery-permissions'
+import { assertUsersBankApproved } from '@/lib/trade-discovery/bank-gating'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -78,7 +79,7 @@ export const createDiscoveryBid = async (
     if (!user?.isActive) {
       throw new MasterDataError('User not found', 404, 'missing_entity')
     }
-    if (!isDiscoveryActorRole(user.role)) {
+    if (!isDiscoveryBidderRole(user.role)) {
       throw new MasterDataError('Only exporter or importer users can submit bids', 403, 'forbidden_role')
     }
 
@@ -91,6 +92,12 @@ export const createDiscoveryBid = async (
     if (rfq.status !== 'OPEN') {
       throw new MasterDataError('RFQ is not open for bidding', 409, 'rfq_not_open')
     }
+    assertUsersBankApproved(
+      store.users,
+      store.bankReviews,
+      [req.bidderUserId, rfq.createdByUserId],
+      'Bid submission',
+    )
 
     const bid = await createEntity(
       'bids',

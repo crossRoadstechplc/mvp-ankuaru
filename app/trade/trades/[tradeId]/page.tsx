@@ -59,6 +59,13 @@ export default async function TradeDetailPage({
         </p>
       </section>
 
+      {trade.contractSummary ? (
+        <section className="rounded-2xl border border-violet-200 bg-violet-50/60 p-6">
+          <h2 className="text-lg font-semibold text-slate-950">Contract summary (generated)</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-700">{trade.contractSummary}</p>
+        </section>
+      ) : null}
+
       <section className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6">
         <h2 className="text-lg font-semibold text-slate-950">Linked lots</h2>
         <ul className="mt-3 space-y-2 text-sm">

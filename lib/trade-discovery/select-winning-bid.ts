@@ -2,6 +2,7 @@ import type { Bid, RFQ, Trade } from '@/lib/domain/types'
 import { createEventId } from '@/lib/events/ledger'
 import { assertTradeLotsExportEligible, generateEntityId, MasterDataError } from '@/lib/master-data/crud'
 import { readLiveDataStore, writeLiveDataStore } from '@/lib/persistence/live-data-store'
+import { assertUsersBankApproved } from '@/lib/trade-discovery/bank-gating'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -88,6 +89,12 @@ export const selectWinningBid = async (
     }
 
     assertTradeLotsExportEligible(store, bid.lotIds)
+    assertUsersBankApproved(
+      store.users,
+      store.bankReviews,
+      [rfq.createdByUserId, bid.bidderUserId],
+      'Winning bid selection',
+    )
 
     const timestamp = new Date().toISOString()
 
@@ -120,6 +127,19 @@ export const selectWinningBid = async (
       lotIds: bid.lotIds,
       status: 'BANK_PENDING',
       bankApproved: false,
+      contractSummary: [
+        'Contract summary (generated)',
+        `RFQ: ${rfq.id}`,
+        `Bid: ${bid.id}`,
+        `Buyer: ${rfq.createdByUserId}`,
+        `Seller: ${bid.bidderUserId}`,
+        `Lots: ${bid.lotIds.join(', ') || 'n/a'}`,
+        `Price: ${bid.price.toFixed(2)}`,
+        `Quality: ${rfq.qualityRequirement}`,
+        `Location: ${rfq.location}`,
+        `Bank check: both parties approved`,
+        `Generated at: ${timestamp}`,
+      ].join(' | '),
       createdAt: timestamp,
       updatedAt: timestamp,
     }

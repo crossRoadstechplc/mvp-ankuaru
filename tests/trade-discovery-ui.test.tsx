@@ -4,6 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CreateRfqForm } from '@/components/trade/create-rfq-form'
 import { SubmitBidForm } from '@/components/trade/submit-bid-form'
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -28,7 +35,7 @@ describe('CreateRfqForm', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    render(<CreateRfqForm publisherUsers={exporters} />)
+    render(<CreateRfqForm publisherUsers={exporters} lots={lots} />)
 
     fireEvent.change(screen.getByLabelText(/Desired quantity/i), { target: { value: '400' } })
     fireEvent.change(screen.getByLabelText(/Quality requirement/i), {

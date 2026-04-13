@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
-import type { LiveDataStore, Trade } from '@/lib/domain/types'
+import type { Field, LiveDataStore, Trade } from '@/lib/domain/types'
+import { polygonsOverlap } from '@/lib/fields/geometry'
 import { getPreviewProjectRoot } from '@/lib/admin/preview-sessions'
 import { isLotExportEligible } from '@/lib/labs/export-eligibility'
 import {
@@ -103,6 +104,28 @@ export const assertTradeLotsExportEligible = (store: LiveDataStore, lotIds: stri
   }
 }
 
+const assertFieldNoCrossFarmerOverlap = (
+  store: LiveDataStore,
+  candidate: Pick<Field, 'id' | 'farmerId' | 'name' | 'polygon'>,
+): void => {
+  const overlap = store.fields.find((existing) => {
+    if (existing.id === candidate.id) {
+      return false
+    }
+    if (existing.farmerId === candidate.farmerId) {
+      return false
+    }
+    return polygonsOverlap(candidate.polygon, existing.polygon)
+  })
+  if (overlap) {
+    throw new MasterDataError(
+      `Field overlaps another farmer field (${overlap.name}). Choose a non-overlapping area.`,
+      409,
+      'field_overlap_conflict',
+    )
+  }
+}
+
 const throwDuplicateIfNeeded = <Name extends MasterCollectionName>(
   collectionName: Name,
   candidate: Omit<MasterEntityMap[Name], 'id' | 'createdAt' | 'updatedAt'> &
@@ -141,6 +164,9 @@ export const createEntity = async <Name extends MasterCollectionName>(
     await withCollectionWritten(
       collectionName,
       (store, collection) => {
+        if (collectionName === 'fields') {
+          assertFieldNoCrossFarmerOverlap(store, entity as Field)
+        }
         if (collectionName === 'trades') {
           assertTradeLotsExportEligible(store, (entity as Trade).lotIds)
         }
@@ -195,6 +221,9 @@ export const updateEntity = async <Name extends MasterCollectionName>(
           updatedAt: createTimestamp(),
         } as MasterEntityMap[Name]
 
+        if (collectionName === 'fields') {
+          assertFieldNoCrossFarmerOverlap(store, nextEntity as Field)
+        }
         if (collectionName === 'trades') {
           assertTradeLotsExportEligible(store, (nextEntity as Trade).lotIds)
         }
