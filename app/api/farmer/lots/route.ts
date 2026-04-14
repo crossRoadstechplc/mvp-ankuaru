@@ -4,6 +4,8 @@ import { requireFarmerSessionMatchesBody } from '@/lib/auth/api-guards'
 import { MasterDataError, resolveProjectRootFromRequest } from '@/lib/master-data/crud'
 import { createFarmerLotWithPickEvent, parseFarmerLotCreateRequest } from '@/lib/lots/farmer-pick-lot'
 
+export const dynamic = 'force-dynamic'
+
 const toErrorResponse = (error: unknown) => {
   if (error instanceof MasterDataError) {
     return NextResponse.json(

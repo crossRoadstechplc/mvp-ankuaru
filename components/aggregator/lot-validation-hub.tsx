@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 
 import type { Lot } from '@/lib/domain/types'
 import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
+import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
 
 const farmerOriginBuckets = (lots: Lot[]) => {
@@ -42,11 +43,7 @@ export function LotValidationHub() {
   const lots = useLiveDataClientStore((s) => s.lots)
   const loading = useLiveDataClientStore((s) => s.lotsLoading)
   const error = useLiveDataClientStore((s) => s.lotsError)
-  const loadLots = useLiveDataClientStore((s) => s.loadLots)
-
-  useEffect(() => {
-    void loadLots({ force: true })
-  }, [loadLots])
+  useLiveDataPoll('lots')
 
   const { awaiting, validated, rejected } = useMemo(() => farmerOriginBuckets(lots), [lots])
 

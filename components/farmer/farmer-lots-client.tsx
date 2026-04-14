@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
 import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
@@ -53,6 +54,7 @@ export function FarmerLotsClient() {
   }, [loadAll])
 
   const listMode = isFarmerSession ? 'single-farmer' : 'all-farmers-origin'
+  useLiveDataPoll('all', { enabled: listMode === 'all-farmers-origin' })
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-5 py-8 sm:px-8 lg:px-10">
