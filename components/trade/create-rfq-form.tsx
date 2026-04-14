@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import type { LabResult, Lot, User } from '@/lib/domain/types'
+import { useServerSnapshotRefresh } from '@/hooks/use-server-snapshot-refresh'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
   const response = await fetch(input, {
@@ -40,6 +41,7 @@ export function CreateRfqForm({
   processedOutputLotIds = [],
 }: CreateRfqFormProps) {
   const router = useRouter()
+  useServerSnapshotRefresh()
   const [createdByUserId, setCreatedByUserId] = useState(publisherUsers[0]?.id ?? '')
   const [opportunityType, setOpportunityType] = useState<'RFQ' | 'IOI' | 'AUCTION'>('RFQ')
   const [credibilityMode, setCredibilityMode] = useState<'STANDARD' | 'LAB_VERIFIED' | 'LAB_TRANSPORT_VERIFIED'>(

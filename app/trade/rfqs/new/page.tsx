@@ -1,6 +1,8 @@
 import { CreateRfqForm } from '@/components/trade/create-rfq-form'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
 
+export const dynamic = 'force-dynamic'
+
 export default async function NewRfqPage() {
   const store = await initializeLiveDataStore()
   const publisherUsers = store.users.filter(

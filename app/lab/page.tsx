@@ -5,6 +5,8 @@ import { PageIntro } from '@/components/ui/page-intro'
 import { getLotsInLabQueue } from '@/lib/labs/lab-queue'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
 
+export const dynamic = 'force-dynamic'
+
 export default async function LabDashboardPage() {
   const store = await initializeLiveDataStore()
   const queue = getLotsInLabQueue(store)

@@ -4,7 +4,10 @@ import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import type { Driver, Lot, User, Vehicle } from '@/lib/domain/types'
+import type { Driver, User, Vehicle } from '@/lib/domain/types'
+import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
+import { dispatchTransportMutationEvent } from '@/lib/client/transport-mutation-event'
+import { useLiveDataClientStore } from '@/store/live-data-client-store'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
   const response = await fetch(input, {
@@ -27,7 +30,10 @@ const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
 
 export function SendToLabForm() {
   const router = useRouter()
-  const [lots, setLots] = useState<Lot[]>([])
+  const lots = useLiveDataClientStore((s) => s.lots)
+  const lotsLoading = useLiveDataClientStore((s) => s.lotsLoading)
+  const loadLots = useLiveDataClientStore((s) => s.loadLots)
+  useLiveDataPoll('lots')
   const [users, setUsers] = useState<User[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -41,25 +47,25 @@ export function SendToLabForm() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
+    void loadLots({ force: true })
+  }, [loadLots])
+
+  useEffect(() => {
     let cancelled = false
     const load = async () => {
       try {
-        const [lotRes, userRes, vehicleRes, driverRes] = await Promise.all([
-          fetchJson('/api/lots'),
+        const [userRes, vehicleRes, driverRes] = await Promise.all([
           fetchJson('/api/users'),
           fetchJson('/api/vehicles'),
           fetchJson('/api/drivers'),
         ])
         if (cancelled) return
-        const nextLots = lotRes as Lot[]
         const nextUsers = userRes as User[]
         const nextVehicles = vehicleRes as Vehicle[]
         const nextDrivers = driverRes as Driver[]
-        setLots(nextLots)
         setUsers(nextUsers)
         setVehicles(nextVehicles)
         setDrivers(nextDrivers)
-        setLotId((prev) => prev || nextLots.find((lot) => lot.status !== 'IN_TRANSIT')?.id || '')
         setTransporterUserId(
           (prev) => prev || nextUsers.find((user) => user.role === 'transporter' && user.isActive)?.id || '',
         )
@@ -80,6 +86,15 @@ export function SendToLabForm() {
     () => lots.filter((lot) => lot.status !== 'IN_TRANSIT' && lot.status !== 'CLOSED' && lot.status !== 'QUARANTINED'),
     [lots],
   )
+
+  useEffect(() => {
+    setLotId((prev) => {
+      if (prev && eligibleLots.some((lot) => lot.id === prev)) {
+        return prev
+      }
+      return eligibleLots[0]?.id ?? ''
+    })
+  }, [eligibleLots])
   const transporters = useMemo(
     () => users.filter((user) => user.role === 'transporter' && user.isActive),
     [users],
@@ -117,7 +132,9 @@ export function SendToLabForm() {
           locationStatus: locationStatus.trim() || 'Received at assigned lab',
         }),
       })
-      router.back()
+      await loadLots({ force: true })
+      dispatchTransportMutationEvent()
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to assign lot to lab')
     } finally {
@@ -228,6 +245,9 @@ export function SendToLabForm() {
         />
       </label>
 
+      {lotsLoading && lots.length === 0 ? (
+        <p className="text-sm text-slate-600">Loading lots…</p>
+      ) : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
       <button
         type="submit"

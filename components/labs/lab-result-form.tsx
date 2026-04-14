@@ -84,9 +84,11 @@ export function LabResultForm({ lot, labUsers, onSuccess }: LabResultFormProps) 
           metadata,
         }),
       })
-      router.refresh()
       onSuccess?.()
-      router.back()
+      router.replace('/lab')
+      queueMicrotask(() => {
+        router.refresh()
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {

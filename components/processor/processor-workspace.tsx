@@ -3,8 +3,11 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
-import type { Event, Lot } from '@/lib/domain/types'
+import type { Event } from '@/lib/domain/types'
+import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
+import { TRANSPORT_MUTATION_EVENT } from '@/lib/client/transport-mutation-event'
 import { PROCESSOR_PIPELINE_INPUT_STATUS } from '@/lib/lots/processing-eligibility'
+import { useLiveDataClientStore } from '@/store/live-data-client-store'
 
 const outputIdsFromEvents = (events: Event[]): Set<string> => {
   const ids = new Set<string>()
@@ -25,38 +28,66 @@ const fetchJson = async (input: RequestInfo) => {
   return data
 }
 
+const EVENTS_POLL_MS = 8_000
+
 export function ProcessorWorkspace() {
-  const [lots, setLots] = useState<Lot[]>([])
+  const lots = useLiveDataClientStore((s) => s.lots)
+  const lotsLoading = useLiveDataClientStore((s) => s.lotsLoading)
+  const loadLots = useLiveDataClientStore((s) => s.loadLots)
+  useLiveDataPoll('lots')
+
   const [events, setEvents] = useState<Event[]>([])
+  const [eventsLoading, setEventsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    void loadLots({ force: true })
+  }, [loadLots])
 
   useEffect(() => {
     let cancelled = false
-    const load = async () => {
-      setLoading(true)
+
+    const loadEvents = async () => {
       try {
-        const [lotRows, eventRows] = await Promise.all([
-          fetchJson('/api/lots') as Promise<Lot[]>,
-          fetchJson('/api/events') as Promise<Event[]>,
-        ])
+        const eventRows = (await fetchJson('/api/events')) as Event[]
         if (!cancelled) {
-          setLots(lotRows)
           setEvents(eventRows)
+          setError(null)
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Failed to load')
+          setError(e instanceof Error ? e.message : 'Failed to load events')
         }
       } finally {
         if (!cancelled) {
-          setLoading(false)
+          setEventsLoading(false)
         }
       }
     }
-    void load()
+
+    void loadEvents()
+
+    const intervalId = window.setInterval(() => {
+      void loadEvents()
+    }, EVENTS_POLL_MS)
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        void loadEvents()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    const onTransport = () => {
+      void loadEvents()
+    }
+    window.addEventListener(TRANSPORT_MUTATION_EVENT, onTransport)
+
     return () => {
       cancelled = true
+      window.clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener(TRANSPORT_MUTATION_EVENT, onTransport)
     }
   }, [])
 
@@ -84,6 +115,8 @@ export function ProcessorWorkspace() {
     const ids = outputIdsFromEvents(processEvents)
     return lots.filter((l) => l.form === 'BYPRODUCT' && ids.has(l.id)).reduce((s, l) => s + l.weight, 0)
   }, [lots, processEvents])
+
+  const loading = (lotsLoading && lots.length === 0) || eventsLoading
 
   if (loading) {
     return <p className="text-sm text-slate-600">Loading processor workspace…</p>

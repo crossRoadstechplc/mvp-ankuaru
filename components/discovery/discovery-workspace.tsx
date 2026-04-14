@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
 import type { Bid, LiveDataStore, RFQ, Trade } from '@/lib/domain/types'
+import { useServerSnapshotRefresh } from '@/hooks/use-server-snapshot-refresh'
 import { redactBidForRole } from '@/lib/trade-discovery/commercial-visibility'
 import {
   canCreateDiscoveryRfq,
@@ -73,6 +74,7 @@ function RfqCard({
 }
 
 export function DiscoveryWorkspace({ store }: Props) {
+  useServerSnapshotRefresh()
   const role = useSessionStore((s) => s.currentUserRole)
   const userId = useSessionStore((s) => s.currentUserId)
   const isPublisher = isDiscoveryRfqPublisherRole(role)
