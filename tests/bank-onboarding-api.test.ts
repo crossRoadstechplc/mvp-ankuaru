@@ -215,4 +215,24 @@ describe('onboarding state transitions & user activation', () => {
     )
     expect(review.reviewerBankUserId).toBe('user-admin-001')
   })
+
+  it('sets applicant trading role on approve when applicantRole is provided', async () => {
+    const projectRoot = await createTempProjectRoot()
+    const { applicantId, reviewId } = await createInactiveApplicantAndPendingReview(projectRoot)
+    expect((await readLiveDataStore(projectRoot)).users.find((u) => u.id === applicantId)?.role).toBe('importer')
+
+    await applyBankOnboardingReview(
+      {
+        reviewId,
+        bankUserId: 'user-bank-001',
+        decision: 'approve',
+        applicantRole: 'processor',
+      },
+      projectRoot,
+    )
+
+    const store = await readLiveDataStore(projectRoot)
+    expect(store.users.find((u) => u.id === applicantId)?.role).toBe('processor')
+    expect(store.users.find((u) => u.id === applicantId)?.isActive).toBe(true)
+  })
 })

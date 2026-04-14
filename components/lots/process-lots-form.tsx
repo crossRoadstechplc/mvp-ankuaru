@@ -7,6 +7,7 @@ import { btnCtaVioletLgClass } from '@/components/ui/button-styles'
 import { showAppToast } from '@/lib/client/app-toast'
 import { LOT_FORM_VALUES } from '@/lib/domain/constants'
 import type { Lot, LotForm, User } from '@/lib/domain/types'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
 import {
   isMassBalanced,
   sumByproductMasses,
@@ -263,7 +264,8 @@ export function ProcessLotsForm({ onSuccess, lockedActorId, restrictToProcessRea
           <option value="">Select…</option>
           {eligibleLots.map((lot) => (
             <option key={lot.id} value={lot.id}>
-              {lot.publicLotCode} — ID {lot.id} — {lot.weight} kg ({lot.form}) · {lot.status}
+              {lot.publicLotCode} — ID {lot.id} — {lot.weight} kg ({lot.form}) · {lot.status} ·{' '}
+              {formatDisplayTimestamp(lot.updatedAt)}
             </option>
           ))}
         </select>

@@ -54,11 +54,8 @@ export default async function LotParentsOnlyPage({
                     {p.form} · {p.weight} kg · {p.status}
                   </p>
                 </div>
-                <Link
-                  href={`/lots/${p.id}/parents`}
-                  className="text-sm font-medium text-slate-800 underline-offset-2 hover:underline"
-                >
-                  Their parents
+                <Link href={`/lots/${p.id}`} className="text-sm font-medium text-slate-800 underline-offset-2 hover:underline">
+                  Open lot
                 </Link>
               </li>
             ))}

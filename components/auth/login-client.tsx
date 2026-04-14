@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { LoginBankStatusRibbon } from '@/components/auth/login-bank-status-ribbon'
 import { btnCtaAmberClass } from '@/components/ui/button-styles'
 import { showAppToast } from '@/lib/client/app-toast'
 import { ROLE_VALUES } from '@/lib/domain/constants'
@@ -104,7 +105,10 @@ export function LoginClient() {
     >
       {sortedUsers.map((user) => (
         <li key={user.id} className="min-w-0">
-          <article className="group flex h-full min-h-[12rem] flex-col rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/60">
+          <article className="group relative flex h-full min-h-[12rem] flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 p-5 pt-7 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-100/60">
+            {BANK_RELEVANT_ROLES.has(user.role) ? (
+              <LoginBankStatusRibbon approved={isBankApprovedUser(user.id, bankReviews)} />
+            ) : null}
             <div className="flex min-h-0 flex-1 flex-col gap-2.5">
               <p className="truncate text-base font-semibold text-slate-950 sm:text-lg" title={user.name}>
                 {user.name}
@@ -112,17 +116,6 @@ export function LoginClient() {
               <span className="inline-flex w-fit rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium capitalize text-amber-900">
                 {user.role}
               </span>
-              {BANK_RELEVANT_ROLES.has(user.role) ? (
-                <span
-                  className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
-                    isBankApprovedUser(user.id, bankReviews)
-                      ? 'bg-emerald-100 text-emerald-900'
-                      : 'bg-rose-100 text-rose-900'
-                  }`}
-                >
-                  {isBankApprovedUser(user.id, bankReviews) ? 'Bank approved' : 'Bank approval required'}
-                </span>
-              ) : null}
               {user.email ? (
                 <p className="line-clamp-2 break-all text-xs text-slate-600 sm:text-sm" title={user.email}>
                   {user.email}

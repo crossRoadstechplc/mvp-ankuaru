@@ -23,7 +23,12 @@ export default function AdminAggregateLotsPage() {
         linked on all affected records.
       </p>
       <div className="mt-8">
-        <AggregateLotsForm onSuccess={(lotId) => router.push(`/lots/${lotId}`)} />
+        <AggregateLotsForm
+          onSuccess={(lotId) => {
+            router.refresh()
+            router.push(`/lots/${lotId}`)
+          }}
+        />
       </div>
     </div>
   )

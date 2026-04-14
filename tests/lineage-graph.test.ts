@@ -157,6 +157,39 @@ describe('lineage graph helpers', () => {
     expect(tree.branches[0].branches.some((n) => n.truncatedReference)).toBe(true)
   })
 
+  it('buildBackwardLineageTree respects maxLevel for direct parents only', () => {
+    const events: Event[] = [
+      ev({ id: 'e1', type: 'PICK', inputLotIds: [], outputLotIds: ['lot-a'] }),
+      ev({ id: 'e2', type: 'PROCESS', inputLotIds: ['lot-a'], outputLotIds: ['lot-b'] }),
+      ev({ id: 'e3', type: 'PROCESS', inputLotIds: ['lot-b'], outputLotIds: ['lot-c'] }),
+    ]
+    const lots: Lot[] = [
+      baseLot({ id: 'lot-a', publicLotCode: 'A' }),
+      baseLot({ id: 'lot-b', publicLotCode: 'B' }),
+      baseLot({ id: 'lot-c', publicLotCode: 'C' }),
+    ]
+    const store: LiveDataStore = {
+      users: [],
+      farmerProfiles: [],
+      fields: [],
+      lots,
+      events,
+      rfqs: [],
+      bids: [],
+      trades: [],
+      labResults: [],
+      bankReviews: [],
+      vehicles: [],
+      drivers: [],
+    }
+
+    const tree = buildBackwardLineageTree('lot-c', store, new Set(), 0, 1)
+    expect(tree.publicLotCode).toBe('C')
+    expect(tree.branches).toHaveLength(1)
+    expect(tree.branches[0].publicLotCode).toBe('B')
+    expect(tree.branches[0].branches).toHaveLength(0)
+  })
+
   it('buildForwardLineageTree fans out parallel outputs', () => {
     const events: Event[] = [
       ev({

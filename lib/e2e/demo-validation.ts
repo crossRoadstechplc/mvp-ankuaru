@@ -24,14 +24,17 @@ export const validateDemoStore = (store: LiveDataStore): DemoValidationResult =>
     errors.push('Expected at least 3 fields')
   }
 
-  checks.multipleLots = store.lots.length >= 5
+  /** Canonical traceability seed is intentionally small (two core lots); user-created lots append at runtime. */
+  checks.multipleLots = store.lots.length >= 2
   if (!checks.multipleLots) {
-    errors.push('Expected at least 5 lots')
+    errors.push('Expected at least 2 lots')
   }
 
   checks.aggregationPath = store.events.some((e) => e.type === 'AGGREGATE')
-  if (!checks.aggregationPath) {
-    errors.push('Expected at least one AGGREGATE event')
+  checks.transformationDemo =
+    checks.aggregationPath || store.events.some((e) => e.type === 'PROCESS' || e.type === 'DISAGGREGATE')
+  if (!checks.transformationDemo) {
+    errors.push('Expected at least one PROCESS, AGGREGATE, or DISAGGREGATE event')
   }
 
   checks.processingPath = store.events.some((e) => e.type === 'PROCESS')

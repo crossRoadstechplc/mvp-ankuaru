@@ -71,12 +71,14 @@ describe('OnboardingReviewActions', () => {
         reviewId="r1"
         reviewStatus="PENDING_REVIEW"
         bankUsers={bankUsers}
+        applicantCurrentRole="importer"
         initialNotes="Hello"
       />,
     )
 
     expect(screen.getByLabelText(/Bank officer/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/Review status/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Trading role after approval/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Save status & fields/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Approve onboarding/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Reject onboarding/i })).toBeInTheDocument()
@@ -91,7 +93,12 @@ describe('OnboardingReviewActions', () => {
     vi.stubGlobal('location', { reload: vi.fn() })
 
     render(
-      <OnboardingReviewActions reviewId="rev-99" reviewStatus="PENDING_REVIEW" bankUsers={bankUsers} />,
+      <OnboardingReviewActions
+        reviewId="rev-99"
+        reviewStatus="PENDING_REVIEW"
+        bankUsers={bankUsers}
+        applicantCurrentRole="importer"
+      />,
     )
 
     fireEvent.click(screen.getByRole('button', { name: /Approve onboarding/i }))
@@ -104,6 +111,7 @@ describe('OnboardingReviewActions', () => {
       reviewId: 'rev-99',
       bankUserId: 'user-bank-001',
       decision: 'approve',
+      applicantRole: 'importer',
     })
   })
 
@@ -116,7 +124,12 @@ describe('OnboardingReviewActions', () => {
     vi.stubGlobal('location', { reload: vi.fn() })
 
     render(
-      <OnboardingReviewActions reviewId="rev-2" reviewStatus="PENDING_REVIEW" bankUsers={bankUsers} />,
+      <OnboardingReviewActions
+        reviewId="rev-2"
+        reviewStatus="PENDING_REVIEW"
+        bankUsers={bankUsers}
+        applicantCurrentRole="exporter"
+      />,
     )
 
     fireEvent.change(screen.getByLabelText(/Review status/i), {

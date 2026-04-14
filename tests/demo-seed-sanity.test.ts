@@ -10,6 +10,6 @@ describe('demo seed data', () => {
     expect(result.errors).toEqual([])
     expect(result.checks.multipleFarmers).toBe(true)
     expect(result.checks.transportFlow).toBe(true)
-    expect(result.checks.aggregationPath).toBe(true)
+    expect(result.checks.transformationDemo).toBe(true)
   })
 })

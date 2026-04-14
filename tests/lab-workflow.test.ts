@@ -76,10 +76,17 @@ describe('submitLabResult domain', () => {
 
   it('rejects submission when lot does not require lab', async () => {
     const projectRoot = await createTempProjectRoot()
+    await patchLot(
+      withProjectRoot(projectRoot, {
+        method: 'PATCH',
+        body: JSON.stringify({ labStatus: 'NOT_REQUIRED', status: 'READY_FOR_EXPORT' }),
+      }),
+      { params: { id: 'lot-green-001' } },
+    )
     await expect(
       submitLabResult(
         {
-          lotId: 'lot-byproduct-001',
+          lotId: 'lot-green-001',
           labUserId: 'user-lab-001',
           status: 'APPROVED',
         },
@@ -174,6 +181,13 @@ describe('trade creation lab gating', () => {
 
   it('allows trades when lab is NOT_REQUIRED', async () => {
     const projectRoot = await createTempProjectRoot()
+    await patchLot(
+      withProjectRoot(projectRoot, {
+        method: 'PATCH',
+        body: JSON.stringify({ labStatus: 'NOT_REQUIRED' }),
+      }),
+      { params: { id: 'lot-green-001' } },
+    )
 
     const res = await postTrade(
       withProjectRoot(projectRoot, {
@@ -182,7 +196,7 @@ describe('trade creation lab gating', () => {
           rfqId: 'rfq-001',
           buyerUserId: 'user-importer-001',
           sellerUserId: 'user-exporter-001',
-          lotIds: ['lot-byproduct-001'],
+          lotIds: ['lot-green-001'],
           status: 'DRAFT',
           bankApproved: false,
         }),

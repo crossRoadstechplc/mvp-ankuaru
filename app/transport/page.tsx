@@ -2,6 +2,12 @@ import Link from 'next/link'
 
 import { btnCtaSkyClass, btnCtaSkyOutlineClass } from '@/components/ui/button-styles'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
+import {
+  collapsibleBodyClass,
+  collapsibleChevronClass,
+  collapsibleDetailsClass,
+  collapsibleSummaryClass,
+} from '@/lib/ui/collapsible-styles'
 
 export default async function TransportDashboardPage() {
   const store = await initializeLiveDataStore()
@@ -21,74 +27,105 @@ export default async function TransportDashboardPage() {
   })
 
   return (
-    <div className="mt-8 space-y-10">
-      <header>
-        <h1 className="text-3xl font-semibold text-slate-950">Transporter workspace</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Record <strong>dispatch</strong> when custody moves to the carrier (lot becomes <code className="rounded bg-slate-100 px-1 text-xs">IN_TRANSIT</code>
-          ). Record <strong>receipt</strong> when the receiving party takes custody. Legal <strong>ownership</strong> stays
-          on the lot snapshot unless changed elsewhere (e.g. trade settlement).
-        </p>
-      </header>
+    <div className="mt-8 space-y-6">
+      <details open className={collapsibleDetailsClass}>
+        <summary className={collapsibleSummaryClass}>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-sky-800">Transporter</p>
+            <h1 className="mt-1 text-2xl font-semibold text-slate-950 sm:text-3xl">Transporter workspace</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Record <strong>dispatch</strong> when custody moves to the carrier (lot becomes{' '}
+              <code className="rounded bg-slate-100 px-1 text-xs">IN_TRANSIT</code>
+              ). Record <strong>receipt</strong> when the receiving party takes custody. Legal <strong>ownership</strong>{' '}
+              stays on the lot snapshot unless changed elsewhere (e.g. trade settlement).
+            </p>
+          </div>
+          <span className={collapsibleChevronClass} aria-hidden>
+            ▼
+          </span>
+        </summary>
+        <div className={collapsibleBodyClass}>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/transport/dispatch" className={btnCtaSkyClass}>
+              Record dispatch
+            </Link>
+            <Link href="/transport/receipt" className={btnCtaSkyOutlineClass}>
+              Record receipt
+            </Link>
+          </div>
+        </div>
+      </details>
 
-      <section className="flex flex-wrap gap-3">
-        <Link href="/transport/dispatch" className={btnCtaSkyClass}>
-          Record dispatch
-        </Link>
-        <Link href="/transport/receipt" className={btnCtaSkyOutlineClass}>
-          Record receipt
-        </Link>
-      </section>
+      <details open className={collapsibleDetailsClass}>
+        <summary className={collapsibleSummaryClass}>
+          <h2 className="text-xl font-semibold text-slate-950">Lots in transit</h2>
+          <span className={collapsibleChevronClass} aria-hidden>
+            ▼
+          </span>
+        </summary>
+        <div className={collapsibleBodyClass}>
+          {inTransit.length === 0 ? (
+            <p className="text-sm text-slate-600">No lots are currently IN_TRANSIT.</p>
+          ) : (
+            <ul className="space-y-2">
+              {inTransit.map((lot) => (
+                <li key={lot.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                  <span className="font-medium text-slate-900">{lot.publicLotCode}</span>
+                  <span className="text-slate-600"> · custodian {lot.custodianRole}</span>
+                  <Link href={`/lots/${lot.id}`} className="ml-2 text-sky-800 underline-offset-2 hover:underline">
+                    Lot timeline
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </details>
 
-      <section>
-        <h2 className="text-xl font-semibold text-slate-950">Lots in transit</h2>
-        {inTransit.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-600">No lots are currently IN_TRANSIT.</p>
-        ) : (
-          <ul className="mt-4 space-y-2">
-            {inTransit.map((lot) => (
-              <li key={lot.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                <span className="font-medium text-slate-900">{lot.publicLotCode}</span>
-                <span className="text-slate-600"> · custodian {lot.custodianRole}</span>
-                <Link href={`/lots/${lot.id}`} className="ml-2 text-sky-800 underline-offset-2 hover:underline">
-                  Lot timeline
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <details open className={collapsibleDetailsClass}>
+        <summary className={collapsibleSummaryClass}>
+          <h2 className="text-xl font-semibold text-slate-950">Fleet tracking snapshot</h2>
+          <span className={collapsibleChevronClass} aria-hidden>
+            ▼
+          </span>
+        </summary>
+        <div className={collapsibleBodyClass}>
+          {trackedTrips.length === 0 ? (
+            <p className="text-sm text-slate-600">No active fleet assignments yet.</p>
+          ) : (
+            <ul className="space-y-2 text-sm text-slate-700">
+              {trackedTrips.map((trip) => (
+                <li key={trip.lot.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                  <span className="font-medium text-slate-900">{trip.lot.publicLotCode}</span> · vehicle {trip.vehicle} ·
+                  driver {trip.driver} · {trip.location}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </details>
 
-      <section>
-        <h2 className="text-xl font-semibold text-slate-950">Fleet tracking snapshot</h2>
-        {trackedTrips.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-600">No active fleet assignments yet.</p>
-        ) : (
-          <ul className="mt-4 space-y-2 text-sm text-slate-700">
-            {trackedTrips.map((trip) => (
-              <li key={trip.lot.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <span className="font-medium text-slate-900">{trip.lot.publicLotCode}</span> · vehicle {trip.vehicle} ·
-                driver {trip.driver} · {trip.location}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-xl font-semibold text-slate-950">Recent transport events</h2>
-        {transportEvents.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-600">No dispatch or receipt events yet.</p>
-        ) : (
-          <ul className="mt-4 space-y-2 text-sm text-slate-700">
-            {transportEvents.map((e) => (
-              <li key={e.id} className="rounded-lg bg-slate-50 px-3 py-2">
-                {e.type} · {e.timestamp} · lots {e.outputLotIds.join(', ')}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <details open className={collapsibleDetailsClass}>
+        <summary className={collapsibleSummaryClass}>
+          <h2 className="text-xl font-semibold text-slate-950">Recent transport events</h2>
+          <span className={collapsibleChevronClass} aria-hidden>
+            ▼
+          </span>
+        </summary>
+        <div className={collapsibleBodyClass}>
+          {transportEvents.length === 0 ? (
+            <p className="text-sm text-slate-600">No dispatch or receipt events yet.</p>
+          ) : (
+            <ul className="space-y-2 text-sm text-slate-700">
+              {transportEvents.map((e) => (
+                <li key={e.id} className="rounded-lg bg-slate-50 px-3 py-2">
+                  {e.type} · {e.timestamp} · lots {e.outputLotIds.join(', ')}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </details>
     </div>
   )
 }

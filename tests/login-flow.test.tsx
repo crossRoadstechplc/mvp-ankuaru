@@ -33,9 +33,16 @@ describe('LoginClient', () => {
 
   it('loads and renders eligible users from the API grouped by role', async () => {
     const users = eligibleFromSeed()
-    vi.spyOn(global, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ users }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
-    )
+    vi.spyOn(global, 'fetch').mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input)
+      if (url.includes('/api/auth/eligible-users')) {
+        return Promise.resolve(new Response(JSON.stringify({ users }), { status: 200 }))
+      }
+      if (url.includes('/api/bankReviews')) {
+        return Promise.resolve(new Response(JSON.stringify([]), { status: 200 }))
+      }
+      return Promise.resolve(new Response(JSON.stringify({}), { status: 404 }))
+    })
 
     render(<LoginClient />)
     expect(screen.getByTestId('login-loading')).toBeInTheDocument()
@@ -46,14 +53,22 @@ describe('LoginClient', () => {
 
     expect(screen.getByTestId(`login-as-${users[0].id}`)).toBeInTheDocument()
     expect(global.fetch).toHaveBeenCalledWith('/api/auth/eligible-users', { cache: 'no-store' })
+    expect(global.fetch).toHaveBeenCalledWith('/api/bankReviews', { cache: 'no-store' })
   })
 
   it('login success sets session and navigates home', async () => {
     const users = eligibleFromSeed()
     const target = users.find((u) => u.role === 'farmer')!
-    vi.spyOn(global, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ users }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
-    )
+    vi.spyOn(global, 'fetch').mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input)
+      if (url.includes('/api/auth/eligible-users')) {
+        return Promise.resolve(new Response(JSON.stringify({ users }), { status: 200 }))
+      }
+      if (url.includes('/api/bankReviews')) {
+        return Promise.resolve(new Response(JSON.stringify([]), { status: 200 }))
+      }
+      return Promise.resolve(new Response(JSON.stringify({}), { status: 404 }))
+    })
 
     render(<LoginClient />)
     await waitFor(() => expect(screen.getByTestId(`login-as-${target.id}`)).toBeInTheDocument())

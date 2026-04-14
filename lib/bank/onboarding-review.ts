@@ -1,5 +1,5 @@
 import { BANK_REVIEW_STATUS_VALUES } from '@/lib/domain/constants'
-import type { BankReview, BankReviewStatus, User } from '@/lib/domain/types'
+import type { BankReview, BankReviewStatus, Role, User } from '@/lib/domain/types'
 import { MasterDataError } from '@/lib/master-data/crud'
 import { readLiveDataStore, writeLiveDataStore } from '@/lib/persistence/live-data-store'
 
@@ -29,6 +29,22 @@ const asOptionalString = (value: unknown, label: string): string | undefined => 
   return asTrimmedString(value, label)
 }
 
+const TRADE_ROLES_BANK_ONBOARD: Role[] = ['exporter', 'importer', 'processor']
+
+const parseOptionalApplicantTradeRole = (value: unknown): Role | undefined => {
+  if (value === undefined || value === null || value === '') {
+    return undefined
+  }
+  if (typeof value !== 'string') {
+    throw new Error('onboardingReview.applicantRole must be a string')
+  }
+  const trimmed = value.trim()
+  if (!TRADE_ROLES_BANK_ONBOARD.includes(trimmed as Role)) {
+    throw new Error('onboardingReview.applicantRole must be exporter, importer, or processor')
+  }
+  return trimmed as Role
+}
+
 /** Simulator-only: bank or admin updates onboarding review and syncs applicant `isActive` from final status. */
 export type BankOnboardingReviewRequest = {
   reviewId: string
@@ -39,6 +55,8 @@ export type BankOnboardingReviewRequest = {
   financialAssessment?: string
   backgroundCheckStatus?: string
   notes?: string
+  /** When decision is approve, optionally set applicant marketplace role (trading roles only). */
+  applicantRole?: Role
 }
 
 export const parseBankOnboardingReviewRequest = (value: unknown): BankOnboardingReviewRequest => {
@@ -73,6 +91,7 @@ export const parseBankOnboardingReviewRequest = (value: unknown): BankOnboarding
       'onboardingReview.backgroundCheckStatus',
     ),
     notes: asOptionalString(input.notes, 'onboardingReview.notes'),
+    applicantRole: parseOptionalApplicantTradeRole(input.applicantRole),
   }
 }
 
@@ -175,8 +194,16 @@ export const applyBankOnboardingReview = async (
 
     const applicant = store.users[applicantIndex]
     const shouldActivate = applicantActivationForStatus(nextStatus)
+    let nextRole = applicant.role
+    if (req.decision === 'approve' && req.applicantRole !== undefined) {
+      if (!TRADE_ROLES_BANK_ONBOARD.includes(req.applicantRole)) {
+        throw new MasterDataError('applicantRole must be exporter, importer, or processor', 400, 'invalid_payload')
+      }
+      nextRole = req.applicantRole
+    }
     store.users[applicantIndex] = {
       ...applicant,
+      role: nextRole,
       isActive: shouldActivate,
       updatedAt: ts,
     }

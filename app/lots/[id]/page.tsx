@@ -9,12 +9,8 @@ import { getLotWithDerivedState } from '@/lib/events/derived-state'
 import { isInsuredInTransitDisplay } from '@/lib/transport/transport-state'
 import { LotTraceabilityPanel } from '@/components/lots/lot-traceability-panel'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
-import {
-  getBackwardTraceLotIds,
-  getForwardTraceLotIds,
-  resolveOriginFieldThroughLineage,
-} from '@/lib/traceability/lineage-policy'
-import { getChildLots, getLotLineageHints, getParentLots } from '@/lib/traceability/lineage-graph'
+import { resolveOriginFieldThroughLineage } from '@/lib/traceability/lineage-policy'
+import { getLotLineageHints, getParentLots } from '@/lib/traceability/lineage-graph'
 
 export default async function LotDetailPage({
   params,
@@ -44,23 +40,10 @@ export default async function LotDetailPage({
     id: entry.id,
     publicLotCode: entry.publicLotCode,
   }))
-  const childLots = getChildLots(lot.id, store).map((entry) => ({
-    id: entry.id,
-    publicLotCode: entry.publicLotCode,
-  }))
   const lineageHints = getLotLineageHints(lot.id, store.events)
-
-  const lotRef = (id: string) => {
-    const entry = store.lots.find((l) => l.id === id)
-    return { id, publicLotCode: entry?.publicLotCode ?? id }
-  }
 
   const originThroughLineage = resolveOriginFieldThroughLineage(store, lot.id)
   const resolvedFieldViaLineage = !lot.fieldId && Boolean(originThroughLineage.fieldId)
-
-  const backwardTrace = getBackwardTraceLotIds(lot.id, store.events).map(lotRef)
-  const forwardTrace = getForwardTraceLotIds(lot.id, store.events).map(lotRef)
-  const pathLotRefs = originThroughLineage.pathLotIds.map(lotRef)
 
   const handoffs = lotDetail.timeline.map((event) => ({
     id: event.id,
@@ -98,14 +81,6 @@ export default async function LotDetailPage({
         </section>
       ) : null}
       <LotIntegrityBanner lot={lot} />
-      {parentLots.length > 0 ? (
-        <p className="text-sm text-slate-700">
-          <Link href={`/lots/${lot.id}/parents`} className="font-medium text-slate-900 underline-offset-2 hover:underline">
-            View parent lots only
-          </Link>{' '}
-          <span className="text-slate-500">({parentLots.length} direct source snapshot{parentLots.length === 1 ? '' : 's'})</span>
-        </p>
-      ) : null}
       <LotTraceabilityPanel
         lotId={lot.id}
         publicLotCode={lot.publicLotCode}
@@ -118,15 +93,13 @@ export default async function LotDetailPage({
           pathLotIds: originThroughLineage.pathLotIds,
           resolvedViaLineage: resolvedFieldViaLineage,
         }}
-        pathLotRefs={pathLotRefs}
+        directParentRefs={parentLots}
         currentStage={{
           snapshotStatus: lot.status,
           derivedHint: lotDetail.derived.statusHint,
           latestEventType: lotDetail.derived.latestEventType,
         }}
         handoffs={handoffs}
-        backwardTrace={backwardTrace}
-        forwardTrace={forwardTrace}
       />
       <EventTimeline
         lot={lotDetail.lot}
@@ -139,8 +112,9 @@ export default async function LotDetailPage({
         originFarmerLabel={originFarmerLabel}
         lineage={{
           parents: parentLots,
-          children: childLots,
+          children: [],
           hints: lineageHints,
+          parentsOnly: true,
         }}
       />
     </div>

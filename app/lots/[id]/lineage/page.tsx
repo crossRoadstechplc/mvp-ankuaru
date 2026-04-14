@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { LineageViewer } from '@/components/lineage/lineage-viewer'
-import { buildBackwardLineageTree, buildForwardLineageTree } from '@/lib/traceability/lineage-graph'
+import { buildBackwardLineageTree } from '@/lib/traceability/lineage-graph'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
 
 export default async function LotLineagePage({
@@ -18,8 +18,7 @@ export default async function LotLineagePage({
     notFound()
   }
 
-  const backwardRoot = buildBackwardLineageTree(id, store)
-  const forwardRoot = buildForwardLineageTree(id, store)
+  const backwardRoot = buildBackwardLineageTree(id, store, new Set(), 0, 1)
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
@@ -27,8 +26,7 @@ export default async function LotLineagePage({
         <p className="text-sm font-medium uppercase tracking-[0.24em] text-amber-700">Stage 07 · Traceability</p>
         <h1 className="mt-2 text-3xl font-semibold text-slate-950">Lineage explorer</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Graph view derived from event input/output links. Expand nodes to walk upstream or downstream without treating
-          the supply chain as a single strict tree.
+          Direct parent lots only — one ledger hop toward origins. Downstream child lots are not listed here.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
@@ -44,7 +42,7 @@ export default async function LotLineagePage({
       </header>
 
       <div className="mt-8">
-        <LineageViewer lotId={id} backwardRoot={backwardRoot} forwardRoot={forwardRoot} />
+        <LineageViewer lotId={id} backwardRoot={backwardRoot} />
       </div>
     </div>
   )

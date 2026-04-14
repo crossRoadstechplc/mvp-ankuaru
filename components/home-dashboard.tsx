@@ -10,7 +10,10 @@ import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
 import { LotValidationHub } from '@/components/aggregator/lot-validation-hub'
 import { RoleRecentLedgerStrip } from '@/components/dashboard/role-recent-ledger-strip'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
+import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
 import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
+import { useLiveDataClientStore } from '@/store/live-data-client-store'
 import { btnCtaAmberClass, btnCtaOpenCompactClass, btnSecondaryClass } from '@/components/ui/button-styles'
 
 import { RoleSwitcher } from './role-switcher'
@@ -61,12 +64,16 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
     setSelectedUserId(usersForSelectedRole[0]?.id ?? null)
   }, [isAdminSession, selectedUserId, setSelectedUserId, usersForSelectedRole])
 
-  const pendingFarmerValidationCount = useMemo(
-    () =>
-      store.lots.filter((lot) => lotIsFarmerOriginHeldAtFarm(lot) && lot.validationStatus === 'PENDING').length,
-    [store.lots],
-  )
   const showAggregatorValidationFirst = selectedRole === 'aggregator'
+  /** Same source as `LotValidationHub` (`/api/lots`); SSR `store` can lag behind the live JSON file. */
+  const liveLots = useLiveDataClientStore((s) => s.lots)
+  const lotsLoadedAt = useLiveDataClientStore((s) => s.lotsLoadedAt)
+  useLiveDataPoll('lots', { enabled: showAggregatorValidationFirst })
+
+  const pendingFarmerValidationCount = useMemo(() => {
+    const lots = lotsLoadedAt !== null ? liveLots : store.lots
+    return lots.filter((lot) => lotIsFarmerOriginHeldAtFarm(lot) && lot.validationStatus === 'PENDING').length
+  }, [liveLots, lotsLoadedAt, store.lots])
   const [aggregatorLotValidationOpen, setAggregatorLotValidationOpen] = useState(false)
 
   useEffect(() => {
@@ -152,96 +159,107 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
           </details>
         ) : null}
 
-        <section
-          className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5"
-          data-testid="role-dashboard-main"
-        >
-          <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Your workspace</p>
-          <h2 className="mt-2 text-3xl font-semibold capitalize text-slate-950">{roleView.capability.label}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{roleView.capability.description}</p>
-          <p className="mt-2 text-sm text-slate-600">
-            Active user: <span className="font-medium text-slate-900">{selectedUser?.name ?? '—'}</span>
-          </p>
-          {roleView.capability.isReadOnly ? (
-            <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
-              Read-only workspace: browse Discovery and linked lots; no edits or ledger changes.
+        <div data-testid="role-dashboard-main">
+          <CollapsibleSection
+            kicker="Your workspace"
+            title={roleView.capability.label}
+            description={roleView.capability.description}
+            className="[&_h2]:capitalize"
+            defaultOpen
+          >
+            <p className="text-sm text-slate-600">
+              Active user: <span className="font-medium text-slate-900">{selectedUser?.name ?? '—'}</span>
             </p>
-          ) : null}
-
-          <div className="mt-6 grid gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:grid-cols-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Start here</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">
-                {firstAction ? (
-                  <Link href={firstAction.href} className={btnCtaAmberClass}>
-                    {firstAction.label}
-                  </Link>
-                ) : roleView.capability.isReadOnly ? (
-                  <Link href="/discovery" className={btnCtaAmberClass}>
-                    Discovery (read-only)
-                  </Link>
-                ) : (
-                  'Open Discovery or a focus area below'
-                )}
+            {roleView.capability.isReadOnly ? (
+              <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950">
+                Read-only workspace: browse Discovery and linked lots; no edits or ledger changes.
               </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">What matters now</p>
-              <p className="mt-2 text-sm text-slate-800">{firstModule?.summary ?? 'Live data from the store snapshot.'}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Where next</p>
-              <p className="mt-2 text-sm text-slate-800">
-                Sidebar links for your role, plus{' '}
-                <Link href="/discovery" className={btnSecondaryClass}>
-                  Discovery
-                </Link>{' '}
-                everywhere.
-              </p>
-            </div>
-          </div>
+            ) : null}
 
-          {!roleView.capability.isReadOnly && roleView.actions.length > 1 ? (
-            <div className="mt-6 border-t border-slate-100 pt-6">
-              <p className="text-sm font-medium text-slate-700">More actions</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {roleView.actions.slice(1).map((action) => (
-                  <Link key={action.id} href={action.href} className={btnSecondaryClass}>
-                    {action.label}
-                  </Link>
-                ))}
+            <div className="mt-6 grid gap-4 rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Start here</p>
+                <p className="mt-2 text-sm font-medium text-slate-900">
+                  {firstAction ? (
+                    <Link href={firstAction.href} className={btnCtaAmberClass}>
+                      {firstAction.label}
+                    </Link>
+                  ) : roleView.capability.isReadOnly ? (
+                    <Link href="/discovery" className={btnCtaAmberClass}>
+                      Discovery (read-only)
+                    </Link>
+                  ) : (
+                    'Open Discovery or a focus area below'
+                  )}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">What matters now</p>
+                <p className="mt-2 text-sm text-slate-800">
+                  {firstModule?.summary ?? 'Live data from the store snapshot.'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Where next</p>
+                <p className="mt-2 text-sm text-slate-800">
+                  Sidebar links for your role, plus{' '}
+                  <Link href="/discovery" className={btnSecondaryClass}>
+                    Discovery
+                  </Link>{' '}
+                  everywhere.
+                </p>
               </div>
             </div>
-          ) : null}
-        </section>
+
+            {!roleView.capability.isReadOnly && roleView.actions.length > 1 ? (
+              <div className="mt-6 border-t border-slate-100 pt-6">
+                <p className="text-sm font-medium text-slate-700">More actions</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {roleView.actions.slice(1).map((action) => (
+                    <Link key={action.id} href={action.href} className={btnSecondaryClass}>
+                      {action.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </CollapsibleSection>
+        </div>
 
         <RoleRecentLedgerStrip role={selectedRole} store={store} selectedUserId={selectedUserId} />
 
-        <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-          <div className="flex flex-col gap-1">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Focus areas</p>
-            <h3 className="text-lg font-semibold text-slate-950">Live data for this role</h3>
-            <p className="text-sm text-slate-600">Up to four panels from the current store. Expand a row for detail.</p>
-          </div>
-
-          <div className="mt-5 space-y-3">
+        <CollapsibleSection
+          kicker="Focus areas"
+          title="Live data for this role"
+          description="Up to four panels from the current store. Each row below is also collapsible."
+          defaultOpen
+        >
+          <div className="space-y-3">
             {roleView.modules.map((module, index) => (
               <details
                 key={module.id}
-                className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
+                className="group rounded-2xl border border-slate-200 bg-slate-50/80 p-4 open:bg-slate-50"
                 open={index === 0}
               >
-                <summary className="cursor-pointer list-none">
+                <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-base font-semibold text-slate-950">{module.title}</p>
                       <p className="mt-1 text-sm text-slate-600">{module.summary}</p>
                     </div>
-                    <p className="text-sm font-medium text-slate-500">{module.items.length} items</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-slate-500">{module.items.length} items</p>
+                      <span
+                        className="select-none text-sm text-slate-400 transition-transform group-open:rotate-180"
+                        aria-hidden
+                      >
+                        ▼
+                      </span>
+                    </div>
                   </div>
                 </summary>
 
-                <div className="mt-4 grid gap-3">
+                <div className="mt-4 grid gap-3 border-t border-slate-200/80 pt-4">
                   {module.items.length === 0 ? (
                     <div className="rounded-2xl bg-white p-4 text-sm text-slate-600">Nothing seeded for this view.</div>
                   ) : (
@@ -268,7 +286,7 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
               </details>
             ))}
           </div>
-        </section>
+        </CollapsibleSection>
       </div>
   )
 }

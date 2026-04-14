@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useMemo } from 'react'
 
-import type { Lot } from '@/lib/domain/types'
-import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
 import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
+import type { Lot } from '@/lib/domain/types'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
+import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
 
 const farmerOriginBuckets = (lots: Lot[]) => {
@@ -27,6 +29,8 @@ function LotRow({ lot }: { lot: Lot }) {
           {lot.validationStatus !== 'PENDING' && lot.observedWeight !== undefined ? (
             <> · observed {lot.observedWeight} kg</>
           ) : null}
+          {' · '}
+          {formatDisplayTimestamp(lot.updatedAt)}
         </span>
       </div>
       <Link
@@ -56,53 +60,75 @@ export function LotValidationHub() {
   }
 
   return (
-    <div className="space-y-10">
-      <p className="text-sm leading-6 text-slate-600">
-        Farmer-picked lots start as <strong>PENDING</strong>. Record observed weight, notes, then approve or reject.
-        Only <strong>VALIDATED</strong> lots appear in the aggregation picker (with integrity OK and eligible status).
-      </p>
+    <div className="space-y-6">
+      <CollapsibleSection kicker="Guide" title="How validation works" defaultOpen={false}>
+        <p className="text-sm leading-6 text-slate-700">
+          Farmer-picked lots start as <strong>PENDING</strong>. Record observed weight, notes, then approve or reject.
+          Only <strong>VALIDATED</strong> lots appear in the aggregation picker (with integrity OK and eligible status).
+        </p>
+      </CollapsibleSection>
 
-      <section id="awaiting" className="scroll-mt-8 rounded-2xl border border-amber-200 bg-amber-50/50 p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-950">Awaiting validation</h2>
-        <p className="mt-1 text-sm text-slate-600">{awaiting.length} farmer-held lot(s)</p>
+      <CollapsibleSection
+        id="awaiting"
+        kicker="Queue"
+        title="Awaiting validation"
+        description={`${awaiting.length} farmer-held lot(s)`}
+        className="border-amber-200 bg-amber-50/50"
+        summaryAddon={
+          awaiting.length > 0 ? (
+            <span className="rounded-full bg-amber-700 px-2.5 py-0.5 text-xs font-bold text-white">{awaiting.length}</span>
+          ) : null
+        }
+        defaultOpen
+      >
         {awaiting.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">None right now.</p>
+          <p className="text-sm text-slate-600">None right now.</p>
         ) : (
-          <ul className="mt-4 space-y-1">
+          <ul className="space-y-1">
             {awaiting.map((lot) => (
               <LotRow key={lot.id} lot={lot} />
             ))}
           </ul>
         )}
-      </section>
+      </CollapsibleSection>
 
-      <section id="validated" className="scroll-mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-950">Validated lots</h2>
-        <p className="mt-1 text-sm text-slate-600">{validated.length} cleared for aggregation</p>
+      <CollapsibleSection
+        id="validated"
+        kicker="Cleared"
+        title="Validated lots"
+        description={`${validated.length} cleared for aggregation`}
+        className="border-emerald-200 bg-emerald-50/40"
+        defaultOpen
+      >
         {validated.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">None yet.</p>
+          <p className="text-sm text-slate-600">None yet.</p>
         ) : (
-          <ul className="mt-4 space-y-1">
+          <ul className="space-y-1">
             {validated.map((lot) => (
               <LotRow key={lot.id} lot={lot} />
             ))}
           </ul>
         )}
-      </section>
+      </CollapsibleSection>
 
-      <section id="rejected" className="scroll-mt-8 rounded-2xl border border-rose-200 bg-rose-50/40 p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-950">Rejected lots</h2>
-        <p className="mt-1 text-sm text-slate-600">Not eligible for aggregation</p>
+      <CollapsibleSection
+        id="rejected"
+        kicker="Blocked"
+        title="Rejected lots"
+        description="Not eligible for aggregation"
+        className="border-rose-200 bg-rose-50/40"
+        defaultOpen
+      >
         {rejected.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">None.</p>
+          <p className="text-sm text-slate-600">None.</p>
         ) : (
-          <ul className="mt-4 space-y-1">
+          <ul className="space-y-1">
             {rejected.map((lot) => (
               <LotRow key={lot.id} lot={lot} />
             ))}
           </ul>
         )}
-      </section>
+      </CollapsibleSection>
     </div>
   )
 }

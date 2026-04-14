@@ -7,7 +7,6 @@ import type { LineageTreeNode } from '@/lib/traceability/lineage-graph'
 export type LineageViewerProps = {
   lotId: string
   backwardRoot: LineageTreeNode
-  forwardRoot: LineageTreeNode
 }
 
 function LineageTreeNodeView({ node, depth }: { node: LineageTreeNode; depth: number }) {
@@ -56,9 +55,10 @@ function LineageTreeNodeView({ node, depth }: { node: LineageTreeNode; depth: nu
 }
 
 /**
- * Read-only lineage explorer: public lot code, form, and status only (no weights, prices, or internal UUIDs).
+ * Read-only lineage: public lot code, form, and status only (no weights, prices, or internal UUIDs).
+ * This workspace shows direct parents one hop upstream only.
  */
-export function LineageViewer({ lotId, backwardRoot, forwardRoot }: LineageViewerProps) {
+export function LineageViewer({ lotId, backwardRoot }: LineageViewerProps) {
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-slate-200 bg-amber-50/80 p-4 text-sm text-slate-800">
@@ -71,7 +71,7 @@ export function LineageViewer({ lotId, backwardRoot, forwardRoot }: LineageViewe
 
       <section className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-lg font-semibold text-slate-950">Backward trace (toward origins)</h2>
+          <h2 className="text-lg font-semibold text-slate-950">Direct parents (one hop upstream)</h2>
           <Link
             href={`/lots/${lotId}`}
             className="text-sm font-medium text-amber-800 underline underline-offset-2"
@@ -80,19 +80,9 @@ export function LineageViewer({ lotId, backwardRoot, forwardRoot }: LineageViewe
           </Link>
         </div>
         <p className="text-sm text-slate-600">
-          Parent lots are derived from events where this lot appears as an output; aggregation collapses many inputs into
-          one output.
+          Only immediate input lots appear here. Grandparents and child outputs are not shown in this explorer.
         </p>
         <LineageTreeNodeView node={backwardRoot} depth={0} />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-950">Forward trace (toward descendants)</h2>
-        <p className="text-sm text-slate-600">
-          Child lots come from events where this lot is an input — splits, processing outputs, and byproducts appear as
-          parallel branches.
-        </p>
-        <LineageTreeNodeView node={forwardRoot} depth={0} />
       </section>
     </div>
   )

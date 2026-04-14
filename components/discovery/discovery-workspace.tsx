@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
 import { btnCtaAmberClass, btnCtaAmberLgClass, btnSecondaryClass } from '@/components/ui/button-styles'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
 import type { Bid, LiveDataStore, RFQ, Trade } from '@/lib/domain/types'
 import { useServerSnapshotRefresh } from '@/hooks/use-server-snapshot-refresh'
 import { redactBidForRole } from '@/lib/trade-discovery/commercial-visibility'
@@ -154,7 +155,12 @@ export function DiscoveryWorkspace({ store }: Props) {
         </div>
       </header>
 
-      <section className="space-y-4" aria-labelledby="discovery-open-heading">
+      <CollapsibleSection
+        kicker="Discovery"
+        title="Open opportunities"
+        description="Browse open RFQs and select a card to inspect detail below."
+        defaultOpen
+      >
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
             <p className="text-xs uppercase tracking-wide text-slate-500">Open opportunities</p>
@@ -169,10 +175,7 @@ export function DiscoveryWorkspace({ store }: Props) {
             <p className="mt-1 text-xl font-semibold text-slate-900">{closedRfqs.length}</p>
           </div>
         </div>
-        <h2 id="discovery-open-heading" className="text-lg font-semibold text-slate-950">
-          Open opportunities
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {openRfqs.map((rfq) => (
             <div key={rfq.id} className="space-y-2">
               <RfqCard
@@ -185,17 +188,16 @@ export function DiscoveryWorkspace({ store }: Props) {
             </div>
           ))}
         </div>
-        {openRfqs.length === 0 ? <p className="text-sm text-slate-500">No open RFQs.</p> : null}
-      </section>
+        {openRfqs.length === 0 ? <p className="mt-4 text-sm text-slate-500">No open RFQs.</p> : null}
+      </CollapsibleSection>
 
       {isPublisher ? (
-        <section className="space-y-4" aria-labelledby="discovery-my-actions-heading">
-          <h2 id="discovery-my-actions-heading" className="text-lg font-semibold text-slate-950">
-            My actions
-          </h2>
-          <p className="text-sm text-slate-600">
-            RFQs you published and bids you submitted (bids remain exporter/importer actions).
-          </p>
+        <CollapsibleSection
+          kicker="You"
+          title="My actions"
+          description="RFQs you published and bids you submitted (bids remain exporter/importer actions)."
+          defaultOpen
+        >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <p className="text-sm font-medium text-slate-500">RFQs you published</p>
@@ -223,13 +225,10 @@ export function DiscoveryWorkspace({ store }: Props) {
               </ul>
             </div>
           </div>
-        </section>
+        </CollapsibleSection>
       ) : null}
 
-      <section className="space-y-4" aria-labelledby="discovery-closed-heading">
-        <h2 id="discovery-closed-heading" className="text-lg font-semibold text-slate-950">
-          Selected / closed
-        </h2>
+      <CollapsibleSection kicker="History" title="Selected / closed" description="Closed rounds and linked trades." defaultOpen>
         <div className="grid gap-4 md:grid-cols-2">
           {closedRfqs.map((rfq) => {
             const trade = tradesByRfq.get(rfq.id)
@@ -256,17 +255,20 @@ export function DiscoveryWorkspace({ store }: Props) {
             )
           })}
         </div>
-        {closedRfqs.length === 0 ? <p className="text-sm text-slate-500">No closed RFQs yet.</p> : null}
-      </section>
+        {closedRfqs.length === 0 ? <p className="mt-4 text-sm text-slate-500">No closed RFQs yet.</p> : null}
+      </CollapsibleSection>
 
       {focusRfq ? (
-        <aside className="rounded-[2rem] border border-amber-200 bg-amber-50/40 p-6 shadow-inner">
+        <CollapsibleSection
+          key={focusRfq.id}
+          kicker="Detail"
+          title={focusRfq.id}
+          description={focusRfq.qualityRequirement}
+          className="border-amber-200 bg-amber-50/40 shadow-inner"
+          defaultOpen
+        >
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">Detail</p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">{focusRfq.id}</h3>
-              <p className="mt-2 text-sm text-slate-700">{focusRfq.qualityRequirement}</p>
-            </div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">RFQ snapshot</p>
             <div className="flex flex-wrap items-center gap-2">
               {readOnly ? (
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
@@ -322,7 +324,7 @@ export function DiscoveryWorkspace({ store }: Props) {
               </ul>
             </div>
           ) : null}
-        </aside>
+        </CollapsibleSection>
       ) : null}
     </div>
   )

@@ -150,6 +150,7 @@ export default async function BankOnboardingDetailPage({
           reviewId={review.id}
           reviewStatus={review.reviewStatus}
           bankUsers={bankUsers}
+          applicantCurrentRole={applicant?.role ?? 'exporter'}
           initialFinancialAssessment={review.financialAssessment ?? ''}
           initialBackgroundCheckStatus={review.backgroundCheckStatus ?? ''}
           initialNotes={review.notes ?? ''}

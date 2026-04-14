@@ -16,10 +16,7 @@ describe('LotTraceabilityPanel', () => {
           pathLotIds: ['lot-agg', 'lot-src'],
           resolvedViaLineage: true,
         }}
-        pathLotRefs={[
-          { id: 'lot-agg', publicLotCode: 'ANK-AGG-1' },
-          { id: 'lot-src', publicLotCode: 'ANK-SRC-1' },
-        ]}
+        directParentRefs={[{ id: 'lot-src', publicLotCode: 'ANK-SRC-1' }]}
         currentStage={{
           snapshotStatus: 'READY_FOR_PROCESSING',
           derivedHint: 'READY_FOR_PROCESSING',
@@ -34,19 +31,14 @@ describe('LotTraceabilityPanel', () => {
             actorId: 'user-aggregator-001',
           },
         ]}
-        backwardTrace={[
-          { id: 'lot-agg', publicLotCode: 'ANK-AGG-1' },
-          { id: 'lot-src', publicLotCode: 'ANK-SRC-1' },
-        ]}
-        forwardTrace={[{ id: 'lot-agg', publicLotCode: 'ANK-AGG-1' }]}
       />,
     )
 
-    expect(screen.getByRole('heading', { name: /Origin, stage, and ledger path/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Origin, stage, and direct parents/i })).toBeInTheDocument()
     expect(screen.getByText(/no direct field link on the snapshot/i)).toBeInTheDocument()
     expect(screen.getByText('Test plot (field-001)')).toBeInTheDocument()
-    expect(screen.getByText(/Backward trace/i)).toBeInTheDocument()
-    expect(screen.getByText(/Forward trace/i)).toBeInTheDocument()
+    expect(screen.getByText(/Direct parent lots/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'ANK-SRC-1' })).toHaveAttribute('href', '/lots/lot-src')
     expect(screen.getByText(/Role & actor handoffs/i)).toBeInTheDocument()
     const table = screen.getByRole('table')
     expect(within(table).getByText('AGGREGATE')).toBeInTheDocument()

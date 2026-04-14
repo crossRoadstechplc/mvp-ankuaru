@@ -7,6 +7,7 @@ import { btnCtaSkyAltLgClass } from '@/components/ui/button-styles'
 import { showAppToast } from '@/lib/client/app-toast'
 import { LOT_FORM_VALUES } from '@/lib/domain/constants'
 import type { Lot, LotForm, User } from '@/lib/domain/types'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
   const response = await fetch(input, {
@@ -168,7 +169,7 @@ export function DisaggregateLotForm({ onSuccess }: DisaggregateLotFormProps) {
           <option value="">Select…</option>
           {eligibleLots.map((lot) => (
             <option key={lot.id} value={lot.id}>
-              {lot.publicLotCode} — {lot.weight} kg ({lot.form})
+              {lot.publicLotCode} — {lot.weight} kg ({lot.form}) · {formatDisplayTimestamp(lot.updatedAt)}
             </option>
           ))}
         </select>

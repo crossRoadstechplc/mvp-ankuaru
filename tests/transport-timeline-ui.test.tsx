@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { EventTimeline } from '@/components/events/event-timeline'
 
 import type { Lot } from '@/lib/domain/types'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
 import type { DerivedLotState, LotTimelineEntry } from '@/lib/events/derived-state'
 
 afterEach(() => {
@@ -66,9 +67,9 @@ describe('EventTimeline transport section', () => {
       />,
     )
 
-    expect(screen.getByText('Transport timeline')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Dispatch & receipt/i })).toBeInTheDocument()
     expect(screen.getByText(/Insured in transit/i)).toBeInTheDocument()
-    expect(screen.getByText(/DISPATCH · 2026-04-01T10:00:00.000Z/)).toBeInTheDocument()
+    expect(screen.getByText(`DISPATCH · ${formatDisplayTimestamp('2026-04-01T10:00:00.000Z')}`)).toBeInTheDocument()
     expect(screen.getByText(/Vehicle: AA-1/)).toBeInTheDocument()
   })
 

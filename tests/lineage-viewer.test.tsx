@@ -18,7 +18,7 @@ const node = (partial: Partial<LineageTreeNode> & Pick<LineageTreeNode, 'lotId'>
 })
 
 describe('LineageViewer', () => {
-  it('renders backward and forward sections with sample graph data', () => {
+  it('renders direct-parent section with sample graph data', () => {
     const backward: LineageTreeNode = node({
       lotId: 'root',
       publicLotCode: 'PLT-ROOT',
@@ -32,23 +32,12 @@ describe('LineageViewer', () => {
       ],
     })
 
-    const forward: LineageTreeNode = node({
-      lotId: 'root',
-      publicLotCode: 'PLT-ROOT',
-      branches: [
-        node({ lotId: 'c1', publicLotCode: 'PLT-C1', form: 'GREEN', branches: [] }),
-        node({ lotId: 'c2', publicLotCode: 'PLT-C2', form: 'BYPRODUCT', branches: [] }),
-      ],
-    })
+    render(<LineageViewer lotId="root" backwardRoot={backward} />)
 
-    render(<LineageViewer lotId="root" backwardRoot={backward} forwardRoot={forward} />)
-
-    expect(screen.getByText(/Backward trace \(toward origins\)/)).toBeInTheDocument()
-    expect(screen.getByText(/Forward trace \(toward descendants\)/)).toBeInTheDocument()
+    expect(screen.getByText(/Direct parents \(one hop upstream\)/)).toBeInTheDocument()
     expect(screen.getByText(/Privacy/)).toBeInTheDocument()
     expect(screen.getByText(/PLT-P1/)).toBeInTheDocument()
-    expect(screen.getByText(/PLT-C1/)).toBeInTheDocument()
-    expect(screen.getByText(/PLT-C2/)).toBeInTheDocument()
+    expect(screen.queryByText(/PLT-C1/)).not.toBeInTheDocument()
     expect(screen.queryByText(/internalUuid/i)).not.toBeInTheDocument()
   })
 })

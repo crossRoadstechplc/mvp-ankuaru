@@ -1,5 +1,6 @@
 import type { LiveDataStore, Role, User } from '@/lib/domain/types'
 import { exportEligibilityLabel } from '@/lib/labs/export-eligibility'
+import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
 import { getLotsInLabQueue } from '@/lib/labs/lab-queue'
 import { getAuthorizedLotIdsForImporter } from '@/lib/permissions/importer-access'
 import type { SummaryCardData } from '@/lib/summary'
@@ -94,7 +95,7 @@ const buildModulesByRole = (
       ]
     }
     case 'aggregator': {
-      const farmerHeld = store.lots.filter((l) => l.ownerRole === 'farmer' && l.custodianRole === 'farmer')
+      const farmerHeld = store.lots.filter(lotIsFarmerOriginHeldAtFarm)
       const awaitingAggregator = farmerHeld.filter((l) => l.validationStatus === 'PENDING')
       const validatedFarmerHeld = farmerHeld.filter((l) => l.validationStatus === 'VALIDATED')
       const rejectedAggregator = farmerHeld.filter((l) => l.validationStatus === 'REJECTED')

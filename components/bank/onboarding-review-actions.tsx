@@ -5,8 +5,13 @@ import { useState } from 'react'
 
 import { btnCtaEmeraldClass, btnCtaSlateClass } from '@/components/ui/button-styles'
 import { showAppToast } from '@/lib/client/app-toast'
-import type { BankReviewStatus, User } from '@/lib/domain/types'
+import type { BankReviewStatus, Role, User } from '@/lib/domain/types'
 import { BANK_REVIEW_STATUS_VALUES } from '@/lib/domain/constants'
+
+const TRADE_ROLES: Role[] = ['exporter', 'importer', 'processor']
+
+const defaultApproveRole = (current: Role): Role =>
+  TRADE_ROLES.includes(current) ? current : 'exporter'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
   const response = await fetch(input, {
@@ -31,6 +36,8 @@ export type OnboardingReviewActionsProps = {
   reviewId: string
   reviewStatus: BankReviewStatus
   bankUsers: User[]
+  /** Applicant's current role — used to default the trading role on approval. */
+  applicantCurrentRole: Role
   initialFinancialAssessment?: string
   initialBackgroundCheckStatus?: string
   initialNotes?: string
@@ -40,11 +47,13 @@ export function OnboardingReviewActions({
   reviewId,
   reviewStatus,
   bankUsers,
+  applicantCurrentRole,
   initialFinancialAssessment = '',
   initialBackgroundCheckStatus = '',
   initialNotes = '',
 }: OnboardingReviewActionsProps) {
   const [bankUserId, setBankUserId] = useState(bankUsers[0]?.id ?? '')
+  const [approveAsRole, setApproveAsRole] = useState<Role>(() => defaultApproveRole(applicantCurrentRole))
   const [status, setStatus] = useState<BankReviewStatus>(reviewStatus)
   const [financialAssessment, setFinancialAssessment] = useState(initialFinancialAssessment)
   const [backgroundCheckStatus, setBackgroundCheckStatus] = useState(initialBackgroundCheckStatus)
@@ -93,6 +102,7 @@ export function OnboardingReviewActions({
     event.preventDefault()
     await postReview({
       decision: 'approve',
+      applicantRole: approveAsRole,
       financialAssessment: financialAssessment.trim() || undefined,
       backgroundCheckStatus: backgroundCheckStatus.trim() || undefined,
       notes: notes.trim() || undefined,
@@ -178,25 +188,46 @@ export function OnboardingReviewActions({
         </button>
       </form>
 
-      <div className="flex flex-wrap gap-3">
-        <form onSubmit={handleApprove}>
-          <button
-            type="submit"
-            disabled={saving || bankUsers.length === 0}
-            className={btnCtaEmeraldClass}
+      <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-5">
+        <h3 className="text-sm font-semibold text-emerald-950">Final approval</h3>
+        <p className="mt-1 text-sm text-emerald-900/90">
+          Activates the account and sets the marketplace trading role (exporter, importer, or processor only).
+        </p>
+        <label className="mt-4 block text-sm">
+          <span className="font-medium text-slate-700">Trading role after approval</span>
+          <select
+            value={approveAsRole}
+            onChange={(e) => setApproveAsRole(e.target.value as Role)}
+            className="mt-2 w-full max-w-xs rounded-xl border border-slate-200 bg-white px-3 py-2 capitalize"
+            aria-label="Trading role after approval"
           >
-            Approve onboarding
-          </button>
-        </form>
-        <form onSubmit={handleReject}>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-full border border-rose-700 bg-white px-5 py-2 text-sm font-semibold text-rose-900 disabled:opacity-50"
-          >
-            Reject onboarding
-          </button>
-        </form>
+            {TRADE_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <form onSubmit={handleApprove}>
+            <button
+              type="submit"
+              disabled={saving || bankUsers.length === 0}
+              className={btnCtaEmeraldClass}
+            >
+              Approve onboarding
+            </button>
+          </form>
+          <form onSubmit={handleReject}>
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-full border border-rose-700 bg-white px-5 py-2 text-sm font-semibold text-rose-900 disabled:opacity-50"
+            >
+              Reject onboarding
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

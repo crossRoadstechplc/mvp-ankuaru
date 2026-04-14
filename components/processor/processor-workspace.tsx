@@ -7,6 +7,7 @@ import type { Event } from '@/lib/domain/types'
 import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
 import { TRANSPORT_MUTATION_EVENT } from '@/lib/client/transport-mutation-event'
 import { btnCtaOpenCompactClass, btnCtaVioletClass } from '@/components/ui/button-styles'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
 import { describeProcessEventFromLots } from '@/lib/roles/role-home-ledger'
 import { PROCESSOR_PIPELINE_INPUT_STATUS } from '@/lib/lots/processing-eligibility'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
@@ -129,17 +130,18 @@ export function ProcessorWorkspace() {
   }
 
   return (
-    <div className="space-y-10">
-      <section className="rounded-2xl border border-violet-200 bg-violet-50/50 p-5 sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-950">Awaiting processing</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Lots in <strong>{PROCESSOR_PIPELINE_INPUT_STATUS}</strong> are handed off from aggregation (or an admin release)
-          and are the only inputs the wash-line form lists for your role.
-        </p>
+    <div className="space-y-6">
+      <CollapsibleSection
+        kicker="Queue"
+        title="Awaiting processing"
+        description={`Lots in ${PROCESSOR_PIPELINE_INPUT_STATUS} are handed off from aggregation (or an admin release) and are the only inputs the wash-line form lists for your role.`}
+        className="border-violet-200 bg-violet-50/50"
+        defaultOpen
+      >
         {awaiting.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">No lots in queue right now.</p>
+          <p className="text-sm text-slate-600">No lots in queue right now.</p>
         ) : (
-          <ul className="mt-4 divide-y divide-violet-100">
+          <ul className="divide-y divide-violet-100">
             {awaiting.map((lot) => (
               <li key={lot.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
@@ -155,15 +157,18 @@ export function ProcessorWorkspace() {
             ))}
           </ul>
         )}
-      </section>
+      </CollapsibleSection>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-950">Recent processing runs</h2>
-        <p className="mt-1 text-sm text-slate-600">Latest PROCESS ledger rows (newest first).</p>
+      <CollapsibleSection
+        kicker="Ledger"
+        title="Recent processing runs"
+        description="Latest PROCESS ledger rows (newest first)."
+        defaultOpen
+      >
         {processEvents.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-600">No runs yet.</p>
+          <p className="text-sm text-slate-600">No runs yet.</p>
         ) : (
-          <ul className="mt-4 space-y-2 text-sm">
+          <ul className="space-y-2 text-sm">
             {processEvents.map((ev) => {
               const d = describeProcessEventFromLots(lots, ev)
               return (
@@ -185,16 +190,20 @@ export function ProcessorWorkspace() {
             })}
           </ul>
         )}
-      </section>
+      </CollapsibleSection>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <section className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5">
-          <h2 className="text-base font-semibold text-slate-950">Main outputs (recent)</h2>
-          <p className="mt-1 text-xs text-slate-600">Non-byproduct child lots from recent runs.</p>
+        <CollapsibleSection
+          kicker="Outputs"
+          title="Main outputs (recent)"
+          description="Non-byproduct child lots from recent runs."
+          className="border-emerald-200 bg-emerald-50/40"
+          defaultOpen
+        >
           {recentOutputs.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-600">—</p>
+            <p className="text-sm text-slate-600">—</p>
           ) : (
-            <ul className="mt-3 space-y-1 text-sm">
+            <ul className="space-y-1 text-sm">
               {recentOutputs.map((lot) => (
                 <li key={lot.id}>
                   <Link href={`/lots/${lot.id}`} className="font-mono font-medium text-emerald-900 underline-offset-2 hover:underline">
@@ -208,12 +217,16 @@ export function ProcessorWorkspace() {
               ))}
             </ul>
           )}
-        </section>
-        <section className="rounded-2xl border border-amber-200 bg-amber-50/40 p-5">
-          <h2 className="text-base font-semibold text-slate-950">Byproducts (snapshot)</h2>
-          <p className="mt-1 text-xs text-slate-600">Total kg on BYPRODUCT lots tied to recent PROCESS outputs.</p>
-          <p className="mt-3 text-2xl font-semibold tabular-nums text-amber-950">{byproductTotals.toFixed(2)} kg</p>
-        </section>
+        </CollapsibleSection>
+        <CollapsibleSection
+          kicker="Inventory"
+          title="Byproducts (snapshot)"
+          description="Total kg on BYPRODUCT lots tied to recent PROCESS outputs."
+          className="border-amber-200 bg-amber-50/40"
+          defaultOpen
+        >
+          <p className="text-2xl font-semibold tabular-nums text-amber-950">{byproductTotals.toFixed(2)} kg</p>
+        </CollapsibleSection>
       </div>
     </div>
   )

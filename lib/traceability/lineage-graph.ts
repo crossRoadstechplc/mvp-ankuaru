@@ -182,6 +182,10 @@ export const buildBackwardLineageTree = (
   lotId: string,
   store: LiveDataStore,
   visited: Set<string> = new Set(),
+  /** Depth from the starting lot (0 = focal lot). When `maxLevel` is set, stops expanding parents at this depth. */
+  level: number = 0,
+  /** When set, only expand parents while `level < maxLevel` (1 = focal lot + direct parents only). */
+  maxLevel?: number,
 ): LineageTreeNode => {
   const lot = getLotById(store, lotId)
   const snap = safeLotSnapshot(lot, lotId)
@@ -199,7 +203,10 @@ export const buildBackwardLineageTree = (
   visited.add(lotId)
 
   const parentIds = getParentLotIds(lotId, store.events)
-  const branches = parentIds.map((parentId) => buildBackwardLineageTree(parentId, store, visited))
+  const stopHere = maxLevel !== undefined && level >= maxLevel
+  const branches = stopHere
+    ? []
+    : parentIds.map((parentId) => buildBackwardLineageTree(parentId, store, visited, level + 1, maxLevel))
 
   return {
     lotId,
@@ -217,6 +224,8 @@ export const buildForwardLineageTree = (
   lotId: string,
   store: LiveDataStore,
   visited: Set<string> = new Set(),
+  level: number = 0,
+  maxLevel?: number,
 ): LineageTreeNode => {
   const lot = getLotById(store, lotId)
   const snap = safeLotSnapshot(lot, lotId)
@@ -234,7 +243,10 @@ export const buildForwardLineageTree = (
   visited.add(lotId)
 
   const childIds = getChildLotIds(lotId, store.events)
-  const branches = childIds.map((childId) => buildForwardLineageTree(childId, store, visited))
+  const stopHere = maxLevel !== undefined && level >= maxLevel
+  const branches = stopHere
+    ? []
+    : childIds.map((childId) => buildForwardLineageTree(childId, store, visited, level + 1, maxLevel))
 
   return {
     lotId,

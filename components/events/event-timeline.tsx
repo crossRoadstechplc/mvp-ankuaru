@@ -2,11 +2,13 @@ import Link from 'next/link'
 
 import { LabStatusBadge } from '@/components/labs/lab-status-badge'
 import { LotLineagePanel, type LineageLotRef } from '@/components/lots/lot-lineage-panel'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
 import type { Lot } from '@/lib/domain/types'
 import { exportEligibilityLabel } from '@/lib/labs/export-eligibility'
 import type { DerivedLotState, LotTimelineEntry } from '@/lib/events/derived-state'
 import { formatByproductKind } from '@/lib/lots/byproduct-inventory'
 import { MASS_BALANCE_EPSILON_KG, sumLedgerByproductsKg } from '@/lib/lots/processing-mass-balance'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
 import type { LotLineageHints } from '@/lib/traceability/lineage-graph'
 
 type EventTimelineProps = {
@@ -25,6 +27,7 @@ type EventTimelineProps = {
     parents: LineageLotRef[]
     children: LineageLotRef[]
     hints: LotLineageHints
+    parentsOnly?: boolean
   }
 }
 
@@ -44,9 +47,8 @@ export function EventTimeline({
   return (
     <section className="space-y-6">
       {showOriginCard && (originFieldLabel || originFarmerLabel) ? (
-        <div className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-          <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Origin & participants</p>
-          <dl className="mt-4 grid gap-4 text-sm text-slate-700 sm:grid-cols-2">
+        <CollapsibleSection kicker="Lot" title="Origin & participants" defaultOpen>
+          <dl className="grid gap-4 text-sm text-slate-700 sm:grid-cols-2">
             <div className="rounded-2xl bg-slate-50 p-4">
               <dt className="font-medium text-slate-500">Origin field</dt>
               <dd className="mt-2 text-base font-semibold text-slate-950">{originFieldLabel ?? 'Not linked'}</dd>
@@ -56,43 +58,44 @@ export function EventTimeline({
               <dd className="mt-2 text-base font-semibold text-slate-950">{originFarmerLabel ?? 'Not linked'}</dd>
             </div>
           </dl>
-        </div>
+        </CollapsibleSection>
       ) : null}
 
-      <div className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">
-              Lot timeline
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-950">{lot.publicLotCode}</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Events are the append-only ledger for this lot. The snapshot record is still shown, but the timeline is
-              the source-of-truth view for operational history.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/lots/${lot.id}/lineage`}
-              className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-950"
-            >
-              Lineage explorer
-            </Link>
-            <Link
-              href="/admin/lots"
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700"
-            >
-              Back to lots admin
-            </Link>
-          </div>
+      <CollapsibleSection
+        kicker="Lot timeline"
+        title={lot.publicLotCode}
+        description="Events are the append-only ledger for this lot. The snapshot record is still shown, but the timeline is the source-of-truth view for operational history."
+        defaultOpen
+      >
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/lots/${lot.id}/lineage`}
+            className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-950"
+          >
+            Lineage explorer
+          </Link>
+          <Link
+            href="/admin/lots"
+            className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700"
+          >
+            Back to lots admin
+          </Link>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {lineage ? (
-        <LotLineagePanel parents={lineage.parents} children={lineage.children} hints={lineage.hints} />
+        <CollapsibleSection kicker="Trace" title="Direct parents & transform hints" defaultOpen>
+          <LotLineagePanel
+            parents={lineage.parents}
+            children={lineage.children}
+            hints={lineage.hints}
+            parentsOnly={lineage.parentsOnly}
+          />
+        </CollapsibleSection>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <CollapsibleSection kicker="Metrics" title="Recorded events & derived state" defaultOpen>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm shadow-black/5">
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Recorded events</p>
           <p className="mt-3 text-4xl font-semibold text-slate-950">{derived.eventCount}</p>
@@ -102,7 +105,9 @@ export function EventTimeline({
           <p className="mt-3 text-xl font-semibold text-slate-950">
             {derived.latestEventType ?? 'No linked events'}
           </p>
-          <p className="mt-2 text-sm text-slate-600">{derived.lastSeenAt ?? 'No timestamp yet'}</p>
+          <p className="mt-2 text-sm text-slate-600">
+            {derived.lastSeenAt ? formatDisplayTimestamp(derived.lastSeenAt) : 'No timestamp yet'}
+          </p>
         </article>
         <article className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm shadow-black/5">
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Derived status hint</p>
@@ -112,32 +117,28 @@ export function EventTimeline({
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Output qty tracked</p>
           <p className="mt-3 text-4xl font-semibold text-slate-950">{derived.totalOutputQty}</p>
         </article>
-      </section>
-
-      <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Transport timeline</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Dispatch & receipt</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Ledger entries for movement and custody handoffs. Vehicles and drivers are linked from master data.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {insuredInTransit ? (
-              <span className="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-950 ring-1 ring-indigo-200">
-                Insured in transit
-              </span>
-            ) : null}
-            <Link
-              href="/transport"
-              className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-950"
-            >
-              Transport workspace
-            </Link>
-          </div>
         </div>
+      </CollapsibleSection>
 
+      <CollapsibleSection
+        kicker="Movement"
+        title="Dispatch & receipt"
+        description="Ledger entries for movement and custody handoffs. Vehicles and drivers are linked from master data."
+        defaultOpen
+      >
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {insuredInTransit ? (
+            <span className="inline-flex rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-950 ring-1 ring-indigo-200">
+              Insured in transit
+            </span>
+          ) : null}
+          <Link
+            href="/transport"
+            className="rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-950"
+          >
+            Transport workspace
+          </Link>
+        </div>
         {transportTimeline.length === 0 ? (
           <p className="mt-5 text-sm text-slate-600">No dispatch or receipt events for this lot yet.</p>
         ) : (
@@ -153,7 +154,7 @@ export function EventTimeline({
                   className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800"
                 >
                   <p className="font-semibold text-slate-950">
-                    {event.type} · {event.timestamp}
+                    {event.type} · {formatDisplayTimestamp(event.timestamp)}
                   </p>
                   <p className="mt-1 text-slate-600">
                     Actor: {event.actorRole} / {event.actorId}
@@ -178,9 +179,10 @@ export function EventTimeline({
             })}
           </ul>
         )}
-      </section>
+      </CollapsibleSection>
 
-      <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <CollapsibleSection kicker="Snapshot" title="Snapshot summary & event ledger" defaultOpen>
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <article className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
           <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Snapshot summary</p>
           <dl className="mt-5 grid gap-4 text-sm text-slate-700 sm:grid-cols-2">
@@ -269,7 +271,7 @@ export function EventTimeline({
                         </p>
                       </div>
                       <div className="text-sm text-slate-600">
-                        <p>{event.timestamp}</p>
+                        <p>{formatDisplayTimestamp(event.timestamp)}</p>
                         <p className="mt-1">
                           {event.actorRole} / {event.actorId}
                         </p>
@@ -326,7 +328,8 @@ export function EventTimeline({
             )}
           </div>
         </article>
-      </section>
+        </div>
+      </CollapsibleSection>
     </section>
   )
 }

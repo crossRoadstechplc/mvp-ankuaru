@@ -7,6 +7,7 @@ import { btnCtaAmberLgClass } from '@/components/ui/button-styles'
 import { showAppToast } from '@/lib/client/app-toast'
 import { LOT_FORM_VALUES } from '@/lib/domain/constants'
 import type { Lot, User } from '@/lib/domain/types'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
 import { lotEligibleForAggregationPicker } from '@/lib/lots/lot-validation-gates'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
@@ -278,7 +279,10 @@ export function AggregateLotsForm({ onSuccess, lockedActorId, includeFarmerOrigi
                 />
                 <span>
                   <span className="font-semibold text-slate-950">{lot.publicLotCode}</span>
-                  <span className="text-slate-600"> — {lot.form} · {lot.weight} kg · {lot.status}</span>
+                  <span className="text-slate-600">
+                    {' '}
+                    — {lot.form} · {lot.weight} kg · {lot.status} · {formatDisplayTimestamp(lot.updatedAt)}
+                  </span>
                 </span>
               </label>
             ))

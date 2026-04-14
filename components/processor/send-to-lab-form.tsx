@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import type { Driver, User, Vehicle } from '@/lib/domain/types'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
 import { btnCtaVioletClass } from '@/components/ui/button-styles'
 import { showAppToast } from '@/lib/client/app-toast'
 import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
@@ -164,7 +165,7 @@ export function SendToLabForm() {
           <option value="">Select lot</option>
           {eligibleLots.map((lot) => (
             <option key={lot.id} value={lot.id}>
-              {lot.publicLotCode} · {lot.status}
+              {lot.publicLotCode} · {lot.status} · {formatDisplayTimestamp(lot.updatedAt)}
             </option>
           ))}
         </select>

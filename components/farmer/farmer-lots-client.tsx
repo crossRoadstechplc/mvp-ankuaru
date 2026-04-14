@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
@@ -10,8 +10,10 @@ import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
 
 import { btnCtaAmberClass, btnSecondaryClass } from '@/components/ui/button-styles'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
 
 import { FarmerLotCreationForm } from './farmer-lot-creation-form'
+import { FarmerOriginLotsMapDynamic } from './farmer-origin-lots-map-dynamic'
 import { FarmerOriginLotsList } from './farmer-origin-lots-list'
 
 export function FarmerLotsClient() {
@@ -75,9 +77,8 @@ export function FarmerLotsClient() {
               </>
             ) : isAggregatorSession ? (
               <>
-                Every lot in the store that is still tied to a farmer account. Check declared{' '}
-                <strong>weight</strong> against field context, then open <strong>Create aggregation</strong> when you
-                control the source lots you want to merge.
+                Every lot in the store that is still tied to a farmer account. Review picks on the map by field, then open{' '}
+                <strong>Create aggregation</strong> when you control the source lots you want to merge.
               </>
             ) : (
               <>Origin lots linked to farmers. Lot creation is only available when signed in as a farmer.</>
@@ -111,51 +112,64 @@ export function FarmerLotsClient() {
           <p className="font-medium">Viewing as {sessionRole}</p>
           <p className="mt-2 text-sky-900/90">
             Below: all farmer-linked origin lots. Add <span className="font-mono">?farmerId=…</span> only affects filters
-            if you switch to a farmer-specific tool elsewhere — here the table is{' '}
-            <strong>all farmers</strong> for review.
+            if you switch to a farmer-specific tool elsewhere — here the table is <strong>all farmers</strong> for review.
           </p>
         </div>
       ) : null}
 
       {isFarmerSession ? (
-        <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-          <h2 className="text-xl font-semibold text-slate-950">Create pick</h2>
+        <CollapsibleSection kicker="Farmer" title="Create pick" defaultOpen>
           {loading ? (
-            <p className="mt-4 text-sm text-slate-600">Loading…</p>
+            <p className="text-sm text-slate-600">Loading…</p>
           ) : loadError ? (
-            <p className="mt-4 text-sm text-red-700">{loadError}</p>
+            <p className="text-sm text-red-700">{loadError}</p>
           ) : (
-            <div className="mt-6">
-              <FarmerLotCreationForm
-                farmerUserId={farmerUserId}
-                fields={fields}
-                onCreated={() => {
-                  void reload()
-                }}
-              />
-            </div>
+            <FarmerLotCreationForm
+              farmerUserId={farmerUserId}
+              fields={fields}
+              onCreated={() => {
+                void reload()
+              }}
+            />
           )}
-        </section>
+        </CollapsibleSection>
       ) : null}
 
-      <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
-        <h2 className="text-xl font-semibold text-slate-950">
-          {isFarmerSession ? 'Your picks' : 'All farmer-origin lots'}
-        </h2>
-        <p className="mt-2 text-sm text-slate-600">
-          {isFarmerSession
+      {isAggregatorSession ? (
+        <CollapsibleSection
+          kicker="Aggregator"
+          title="Origin map"
+          description="Field boundaries and lot markers for farmers with picks in the live store."
+          defaultOpen
+        >
+          {loading ? (
+            <p className="text-sm text-slate-600">Loading map data…</p>
+          ) : loadError ? (
+            <p className="text-sm text-red-700">{loadError}</p>
+          ) : (
+            <FarmerOriginLotsMapDynamic lots={lots} fields={fields} />
+          )}
+        </CollapsibleSection>
+      ) : null}
+
+      <CollapsibleSection
+        kicker={isFarmerSession ? 'Farmer' : 'Inventory'}
+        title={isFarmerSession ? 'Your picks' : isAggregatorSession ? 'Table view (all farmer-origin lots)' : 'All farmer-origin lots'}
+        description={
+          isFarmerSession
             ? 'Includes all picks where you are recorded as farmer.'
-            : 'Sorted newest first. Weight is the farmer-declared quantity on the lot snapshot — open a lot for events and lineage.'}
-        </p>
-        <div className="mt-6">
-          <FarmerOriginLotsList
-            lots={lots}
-            fields={fields}
-            farmerUserId={farmerUserId}
-            listMode={listMode}
-          />
-        </div>
-      </section>
+            : 'Sorted newest first. Weight is the farmer-declared quantity on the lot snapshot — open a lot for events and lineage.'
+        }
+        defaultOpen={!isAggregatorSession}
+      >
+        {loading && !isAggregatorSession ? (
+          <p className="text-sm text-slate-600">Loading…</p>
+        ) : loadError ? (
+          <p className="text-sm text-red-700">{loadError}</p>
+        ) : (
+          <FarmerOriginLotsList lots={lots} fields={fields} farmerUserId={farmerUserId} listMode={listMode} />
+        )}
+      </CollapsibleSection>
     </main>
   )
 }

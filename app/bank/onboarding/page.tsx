@@ -1,11 +1,16 @@
 import Link from 'next/link'
 
+import { BankNewOnboardingForm } from '@/components/bank/bank-new-onboarding-form'
 import { OnboardingReviewList } from '@/components/bank/onboarding-review-list'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
 
 export default async function BankOnboardingPage() {
   const store = await initializeLiveDataStore()
   const usersById = new Map(store.users.map((u) => [u.id, u]))
+  const defaultReviewerBankUserId =
+    store.users.find((u) => u.isActive && u.role === 'bank')?.id ??
+    store.users.find((u) => u.isActive && u.role === 'admin')?.id ??
+    ''
   const open = store.bankReviews.filter((r) => r.reviewStatus !== 'APPROVED' && r.reviewStatus !== 'REJECTED')
   const approvedReviews = store.bankReviews.filter((r) => r.reviewStatus === 'APPROVED')
   const approvedTraderRoles = new Set(['processor', 'exporter', 'importer', 'aggregator', 'transporter', 'lab'])
@@ -38,6 +43,8 @@ export default async function BankOnboardingPage() {
           </Link>
         </p>
       </header>
+
+      <BankNewOnboardingForm defaultReviewerBankUserId={defaultReviewerBankUserId} />
 
       <section>
         <h2 className="text-xl font-semibold text-slate-950">Open queue</h2>

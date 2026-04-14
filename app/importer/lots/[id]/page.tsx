@@ -11,7 +11,7 @@ import { canImporterViewLot } from '@/lib/permissions/importer-access'
 import { redactTradeForRole } from '@/lib/trade-discovery/commercial-visibility'
 import { isInsuredInTransitDisplay } from '@/lib/transport/transport-state'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
-import { getChildLots, getLotLineageHints, getParentLots } from '@/lib/traceability/lineage-graph'
+import { getLotLineageHints, getParentLots } from '@/lib/traceability/lineage-graph'
 
 const DEFAULT_BUYER = 'user-importer-001'
 
@@ -48,10 +48,6 @@ export default async function ImporterLotDetailPage({
       : undefined
 
   const parentLots = getParentLots(lot.id, store).map((entry) => ({
-    id: entry.id,
-    publicLotCode: entry.publicLotCode,
-  }))
-  const childLots = getChildLots(lot.id, store).map((entry) => ({
     id: entry.id,
     publicLotCode: entry.publicLotCode,
   }))
@@ -101,8 +97,9 @@ export default async function ImporterLotDetailPage({
         originFarmerLabel={originFarmerLabel}
         lineage={{
           parents: parentLots,
-          children: childLots,
+          children: [],
           hints: lineageHints,
+          parentsOnly: true,
         }}
       />
     </div>

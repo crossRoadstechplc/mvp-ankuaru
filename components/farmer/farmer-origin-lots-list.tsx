@@ -3,6 +3,7 @@
 import Link from 'next/link'
 
 import type { Field, Lot } from '@/lib/domain/types'
+import { formatDisplayTimestamp } from '@/lib/format-operation-time'
 
 export type FarmerOriginListMode = 'single-farmer' | 'all-farmers-origin'
 
@@ -59,6 +60,7 @@ export function FarmerOriginLotsList({
             {lot.status}
           </p>
           <p className="mt-1 font-mono text-xs text-slate-500">{lot.id}</p>
+          <p className="mt-2 text-xs text-slate-500">Last updated {formatDisplayTimestamp(lot.updatedAt)}</p>
           <Link
             href={`/lots/${lot.id}`}
             className="mt-4 inline-flex rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
