@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { btnCtaVioletLgClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import { LOT_FORM_VALUES } from '@/lib/domain/constants'
 import type { Lot, LotForm, User } from '@/lib/domain/types'
 import {
@@ -189,7 +191,8 @@ export function ProcessLotsForm({ onSuccess, lockedActorId, restrictToProcessRea
           byproducts,
           actorId: lockedActorId ?? actorId,
         }),
-      })) as { primaryLot: { id: string } | null; event: { id: string } }
+      })) as { primaryLot: { id: string; publicLotCode?: string } | null; event: { id: string } }
+      showAppToast('Processing run recorded on the ledger.')
       onSuccess?.({ primaryLotId: data.primaryLot?.id ?? null, eventId: data.event.id })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Processing failed')
@@ -389,7 +392,7 @@ export function ProcessLotsForm({ onSuccess, lockedActorId, restrictToProcessRea
       <button
         type="submit"
         disabled={saving || clientBalanced === false}
-        className="rounded-full bg-violet-700 px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        className={btnCtaVioletLgClass}
       >
         {saving ? 'Recording…' : 'Record processing'}
       </button>

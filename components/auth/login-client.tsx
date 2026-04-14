@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { btnCtaAmberClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import { ROLE_VALUES } from '@/lib/domain/constants'
 import type { BankReview, Role, User } from '@/lib/domain/types'
 import { isBankApprovedUser } from '@/lib/trade-discovery/bank-approval'
@@ -67,6 +69,7 @@ export function LoginClient() {
 
   const onLogin = (user: User) => {
     setSession(user.id, user.role, user.name)
+    showAppToast(`Signed in as ${user.name}.`)
     router.replace('/')
   }
 
@@ -129,7 +132,7 @@ export function LoginClient() {
             <button
               type="button"
               onClick={() => onLogin(user)}
-              className="mt-4 w-full rounded-full bg-slate-950 py-2.5 text-sm font-medium text-white transition group-hover:bg-amber-800"
+              className={`${btnCtaAmberClass} mt-4 w-full`}
               data-testid={`login-as-${user.id}`}
             >
               Continue

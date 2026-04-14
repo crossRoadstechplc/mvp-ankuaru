@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 
+import { btnCtaEmeraldClass, btnCtaSlateClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import type { BankReviewStatus, User } from '@/lib/domain/types'
 import { BANK_REVIEW_STATUS_VALUES } from '@/lib/domain/constants'
 
@@ -62,6 +64,13 @@ export function OnboardingReviewActions({
           ...body,
         }),
       })
+      const toastMsg =
+        body.decision === 'approve'
+          ? 'Applicant approved.'
+          : body.decision === 'reject'
+            ? 'Applicant rejected.'
+            : 'Onboarding review saved.'
+      showAppToast(toastMsg)
       window.location.reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')
@@ -163,7 +172,7 @@ export function OnboardingReviewActions({
         <button
           type="submit"
           disabled={saving || bankUsers.length === 0}
-          className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className={btnCtaSlateClass}
         >
           {saving ? 'Saving…' : 'Save status & fields'}
         </button>
@@ -174,7 +183,7 @@ export function OnboardingReviewActions({
           <button
             type="submit"
             disabled={saving || bankUsers.length === 0}
-            className="rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className={btnCtaEmeraldClass}
           >
             Approve onboarding
           </button>

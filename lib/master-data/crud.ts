@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import type { Field, LiveDataStore, Trade } from '@/lib/domain/types'
-import { polygonsOverlap } from '@/lib/fields/geometry'
+import { findOtherFarmerOverlappingField } from '@/lib/fields/field-overlap'
 import { getPreviewProjectRoot } from '@/lib/admin/preview-sessions'
 import { isLotExportEligible } from '@/lib/labs/export-eligibility'
 import {
@@ -108,15 +108,12 @@ const assertFieldNoCrossFarmerOverlap = (
   store: LiveDataStore,
   candidate: Pick<Field, 'id' | 'farmerId' | 'name' | 'polygon'>,
 ): void => {
-  const overlap = store.fields.find((existing) => {
-    if (existing.id === candidate.id) {
-      return false
-    }
-    if (existing.farmerId === candidate.farmerId) {
-      return false
-    }
-    return polygonsOverlap(candidate.polygon, existing.polygon)
-  })
+  const overlap = findOtherFarmerOverlappingField(
+    candidate.polygon,
+    candidate.farmerId,
+    candidate.id,
+    store.fields,
+  )
   if (overlap) {
     throw new MasterDataError(
       `Field overlaps another farmer field (${overlap.name}). Choose a non-overlapping area.`,

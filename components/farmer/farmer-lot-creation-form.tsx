@@ -4,6 +4,7 @@ import type { FormEvent } from 'react'
 import { useMemo, useState } from 'react'
 
 import type { Field } from '@/lib/domain/types'
+import { showAppToast } from '@/lib/client/app-toast'
 
 export type FarmerLotCreationFormProps = {
   farmerUserId: string
@@ -83,15 +84,22 @@ export function FarmerLotCreationForm({ farmerUserId, fields, onCreated }: Farme
       const result = (await fetchJson('/api/farmer/lots', {
         method: 'POST',
         body: JSON.stringify(payload),
-      })) as { lot: { id: string } }
+      })) as { lot: { id: string; publicLotCode?: string } }
 
+      showAppToast(
+        result.lot.publicLotCode
+          ? `Pick recorded: ${result.lot.publicLotCode} is now on the ledger.`
+          : 'Pick recorded and added to the ledger.',
+      )
       onCreated?.(result.lot.id)
       setWeight('')
       setHarvestDate('')
       setVariety('')
       setNotes('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed')
+      const msg = err instanceof Error ? err.message : 'Save failed'
+      setError(msg)
+      showAppToast(msg, 'error')
     } finally {
       setSaving(false)
     }

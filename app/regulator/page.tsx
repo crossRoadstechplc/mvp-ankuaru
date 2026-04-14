@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { RegulatorOversightPanel } from '@/components/regulator/regulator-oversight-panel'
+import { btnCtaOpenCompactClass } from '@/components/ui/button-styles'
 import { PageIntro } from '@/components/ui/page-intro'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
 import { redactTradeForRole } from '@/lib/trade-discovery/commercial-visibility'
@@ -25,10 +26,7 @@ export default async function RegulatorOversightPage() {
         <ul className="mt-4 flex flex-wrap gap-2">
           {store.lots.slice(0, 6).map((lot) => (
             <li key={lot.id}>
-              <Link
-                href={`/lots/${lot.id}`}
-                className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-800 hover:border-slate-300"
-              >
+              <Link href={`/lots/${lot.id}`} className={btnCtaOpenCompactClass}>
                 {lot.publicLotCode}
               </Link>
             </li>

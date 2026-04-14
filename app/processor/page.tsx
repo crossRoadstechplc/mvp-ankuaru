@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 import { SendToLabForm } from '@/components/processor/send-to-lab-form'
 import { ProcessorWorkspace } from '@/components/processor/processor-workspace'
-import { btnSecondaryClass } from '@/components/ui/button-styles'
+import { btnCtaVioletClass, btnSecondaryClass } from '@/components/ui/button-styles'
 
 /** Processor wash-station home: queue, recent runs, and link to the ledger form. */
 export default function ProcessorHomePage() {
@@ -16,10 +16,7 @@ export default function ProcessorHomePage() {
         </p>
       </header>
       <div className="flex flex-wrap gap-3">
-        <Link
-          href="/processor/record"
-          className="inline-flex rounded-full bg-violet-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-violet-800"
-        >
+        <Link href="/processor/record" className={btnCtaVioletClass}>
           Record processing
         </Link>
         <Link href="/" className={btnSecondaryClass}>

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { btnCtaSkyClass, btnCtaSkyOutlineClass } from '@/components/ui/button-styles'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
 
 export default async function TransportDashboardPage() {
@@ -31,16 +32,10 @@ export default async function TransportDashboardPage() {
       </header>
 
       <section className="flex flex-wrap gap-3">
-        <Link
-          href="/transport/dispatch"
-          className="rounded-full bg-sky-800 px-5 py-2.5 text-sm font-semibold text-white"
-        >
+        <Link href="/transport/dispatch" className={btnCtaSkyClass}>
           Record dispatch
         </Link>
-        <Link
-          href="/transport/receipt"
-          className="rounded-full border border-sky-300 bg-white px-5 py-2.5 text-sm font-semibold text-sky-950"
-        >
+        <Link href="/transport/receipt" className={btnCtaSkyOutlineClass}>
           Record receipt
         </Link>
       </section>

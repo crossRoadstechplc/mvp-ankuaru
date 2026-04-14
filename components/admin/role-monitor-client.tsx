@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ROLE_VALUES } from '@/lib/domain/constants'
 import type { Role, User } from '@/lib/domain/types'
+import { showAppToast } from '@/lib/client/app-toast'
 import { DEFAULT_ADMIN_PREVIEW_KEY } from '@/lib/admin/preview-constants'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
@@ -61,6 +62,7 @@ export function RoleMonitorClient() {
       })) as { previewId: string }
       setPreviewId(data.previewId)
       setIframeKey((k) => k + 1)
+      showAppToast('Preview session created.')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create session')
     } finally {
@@ -116,6 +118,7 @@ export function RoleMonitorClient() {
       })
       await loadUsers(previewId)
       reloadIframe()
+      showAppToast('Preview data reset.')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Reset failed')
     } finally {
@@ -137,6 +140,7 @@ export function RoleMonitorClient() {
       setPreviewId(null)
       setUsers([])
       setUserId('')
+      showAppToast('Preview session ended.')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to end session')
     } finally {

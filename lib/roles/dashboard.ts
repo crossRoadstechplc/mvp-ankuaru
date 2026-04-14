@@ -5,8 +5,17 @@ import { getAuthorizedLotIdsForImporter } from '@/lib/permissions/importer-acces
 import type { SummaryCardData } from '@/lib/summary'
 
 import { getRoleCapability, type RoleCreateAction, type RoleNavigationItem } from './capabilities'
+import {
+  ROLE_HOME_LEDGER_HISTORY_LIMIT,
+  describeProcessEventFromLots,
+  primaryLotIdFromEvent,
+  resolveLotPublicCode,
+} from './role-home-ledger'
 
 const MAX_DASHBOARD_MODULES = 4
+
+/** PROCESS / role-home ledger rows (processor home strip + focus modules). */
+export const PROCESSOR_HOME_PROCESS_HISTORY_LIMIT = ROLE_HOME_LEDGER_HISTORY_LIMIT
 
 export type RoleModuleItem = {
   id: string
@@ -35,6 +44,12 @@ const makeItems = <T,>(
   entries: T[],
   mapper: (entry: T, index: number) => RoleModuleItem,
 ): RoleModuleItem[] => entries.slice(0, 4).map(mapper)
+
+const makeItemsUpTo = <T,>(
+  entries: T[],
+  limit: number,
+  mapper: (entry: T, index: number) => RoleModuleItem,
+): RoleModuleItem[] => entries.slice(0, limit).map(mapper)
 
 /** Role home avoids duplicate numeric tiles; use modules and real routes for detail. */
 const buildSummaryCards = (_store: LiveDataStore, _role: Role): SummaryCardData[] => []
@@ -86,7 +101,9 @@ const buildModulesByRole = (
       const pendingLab = store.lots.filter((l) => l.labStatus === 'PENDING')
       const approvedLab = store.lots.filter((l) => l.labStatus === 'APPROVED')
       const rejected = store.lots.filter((l) => l.labStatus === 'FAILED' || l.status === 'QUARANTINED')
-      const aggEvents = store.events.filter((e) => e.type === 'AGGREGATE')
+      const aggEventsForUser = store.events
+        .filter((e) => e.type === 'AGGREGATE' && (!selectedUserId || e.actorId === selectedUserId))
+        .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       return [
         {
           id: 'origin-lots',
@@ -152,18 +169,24 @@ const buildModulesByRole = (
         {
           id: 'aggregation',
           title: 'Aggregation activity',
-          summary: `${aggEvents.length} AGGREGATE events on the ledger`,
-          items: makeItems(aggEvents, (event) => ({
-            id: event.id,
-            label: event.type,
-            detail: `${event.timestamp.slice(0, 10)} · ${event.inputLotIds.length} sources`,
-          })),
+          summary: `${aggEventsForUser.length} AGGREGATE events on the ledger (newest first)`,
+          items: makeItemsUpTo(aggEventsForUser, ROLE_HOME_LEDGER_HISTORY_LIMIT, (event) => {
+            const outId = event.outputLotIds[0]
+            return {
+              id: event.id,
+              label: resolveLotPublicCode(store.lots, outId),
+              detail: `${event.timestamp.slice(0, 19)}Z · ${event.inputLotIds.length} parent snapshot(s)`,
+              href: outId ? `/lots/${outId}/parents` : undefined,
+            }
+          }),
         },
       ].slice(0, MAX_DASHBOARD_MODULES)
     }
     case 'processor': {
       const processReady = store.lots.filter((lot) => lot.status === 'READY_FOR_PROCESSING')
-      const processEvents = store.events.filter((e) => e.type === 'PROCESS')
+      const processEventsNewestFirst = store.events
+        .filter((e) => e.type === 'PROCESS' && (!selectedUserId || e.actorId === selectedUserId))
+        .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       const outputs = store.lots.filter((lot) => ['GREEN', 'BYPRODUCT', 'PARCHMENT'].includes(lot.form))
       return [
         {
@@ -180,12 +203,16 @@ const buildModulesByRole = (
         {
           id: 'processing-history',
           title: 'Processing history',
-          summary: `${processEvents.length} PROCESS events`,
-          items: makeItems(processEvents, (event) => ({
-            id: event.id,
-            label: event.type,
-            detail: `${event.inputLotIds.join(', ')} → ${event.outputLotIds.join(', ')}`,
-          })),
+          summary: `${processEventsNewestFirst.length} PROCESS events · newest first below`,
+          items: makeItemsUpTo(processEventsNewestFirst, PROCESSOR_HOME_PROCESS_HISTORY_LIMIT, (event) => {
+            const d = describeProcessEventFromLots(store.lots, event)
+            return {
+              id: event.id,
+              label: d.title,
+              detail: `${event.timestamp.slice(0, 19)}Z · ${d.detail}`,
+              href: d.href ?? undefined,
+            }
+          }),
         },
         {
           id: 'derived-output-lots',
@@ -202,7 +229,12 @@ const buildModulesByRole = (
     }
     case 'transporter': {
       const inTransit = store.lots.filter((lot) => lot.status === 'IN_TRANSIT')
-      const transportEvents = store.events.filter((e) => ['DISPATCH', 'RECEIPT'].includes(e.type))
+      const transportEvents = store.events
+        .filter(
+          (e) =>
+            ['DISPATCH', 'RECEIPT'].includes(e.type) && (!selectedUserId || e.actorId === selectedUserId),
+        )
+        .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       return [
         {
           id: 'custody-jobs',
@@ -215,11 +247,15 @@ const buildModulesByRole = (
               detail: `IN_TRANSIT · custodian ${lot.custodianRole}`,
               href: `/lots/${lot.id}`,
             })),
-            ...makeItems(transportEvents, (event) => ({
-              id: event.id,
-              label: event.type,
-              detail: `${event.timestamp.slice(0, 16)} · actor ${event.actorId}`,
-            })),
+            ...makeItems(transportEvents, (event) => {
+              const lotId = primaryLotIdFromEvent(event)
+              return {
+                id: event.id,
+                label: resolveLotPublicCode(store.lots, lotId),
+                detail: `${event.type} · ${event.timestamp.slice(0, 16)}`,
+                href: lotId ? `/lots/${lotId}/parents` : undefined,
+              }
+            }),
           ].slice(0, 4),
         },
         {

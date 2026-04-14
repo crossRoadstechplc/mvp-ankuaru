@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { LabStatusBadge } from '@/components/labs/lab-status-badge'
+import { btnCtaCyanClass } from '@/components/ui/button-styles'
 import { PageIntro } from '@/components/ui/page-intro'
 import { getLotsInLabQueue } from '@/lib/labs/lab-queue'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
@@ -42,10 +43,7 @@ export default async function LabDashboardPage() {
                     <LabStatusBadge status={lot.labStatus} />
                   </p>
                 </div>
-                <Link
-                  href={`/lab/lots/${lot.id}/assess`}
-                  className="rounded-full bg-cyan-700 px-4 py-2 text-sm font-medium text-white"
-                >
+                <Link href={`/lab/lots/${lot.id}/assess`} className={btnCtaCyanClass}>
                   Record result
                 </Link>
               </li>

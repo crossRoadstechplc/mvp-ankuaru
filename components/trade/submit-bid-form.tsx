@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useMemo, useState } from 'react'
 
+import { btnCtaSkyLgClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import type { Lot, User } from '@/lib/domain/types'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
@@ -71,6 +73,7 @@ export function SubmitBidForm({ rfqId, bidderUsers, lots }: SubmitBidFormProps) 
           notes: notes.trim() || undefined,
         }),
       })
+      showAppToast('Bid submitted.')
       setDone(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit bid')
@@ -160,7 +163,7 @@ export function SubmitBidForm({ rfqId, bidderUsers, lots }: SubmitBidFormProps) 
       <button
         type="submit"
         disabled={saving || bidderUsers.length === 0}
-        className="rounded-full bg-sky-800 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        className={btnCtaSkyLgClass}
       >
         {saving ? 'Submitting…' : 'Submit bid'}
       </button>

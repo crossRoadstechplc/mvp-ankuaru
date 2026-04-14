@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 
+import { btnCtaAmberClass } from '@/components/ui/button-styles'
 import { canCreateDiscoveryRfq } from '@/lib/trade-discovery/discovery-permissions'
 import { useSessionStore } from '@/store/session-store'
 
@@ -20,10 +21,7 @@ export function RfqListToolbar() {
         ) : null}
       </div>
       {canCreate ? (
-        <Link
-          href="/trade/rfqs/new"
-          className="inline-flex rounded-full bg-amber-800 px-4 py-2 text-sm font-semibold text-white"
-        >
+        <Link href="/trade/rfqs/new" className={btnCtaAmberClass}>
           New RFQ
         </Link>
       ) : null}

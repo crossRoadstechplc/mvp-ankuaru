@@ -5,7 +5,12 @@ import { MapContainer, Polygon, TileLayer, Tooltip, useMap } from 'react-leaflet
 import 'leaflet/dist/leaflet.css'
 
 import type { Field } from '@/lib/domain/types'
-import { DEFAULT_MAP_FALLBACK_CENTER, resolveMapCenterFromGeolocation } from '@/lib/fields/map-initial-view'
+import {
+  DEFAULT_MAP_FALLBACK_CENTER,
+  DISTRIBUTION_MAP_FALLBACK_ZOOM,
+  DISTRIBUTION_MAP_GEOLOCATION_ZOOM,
+  resolveMapCenterFromGeolocation,
+} from '@/lib/fields/map-initial-view'
 import type { FieldDistributionMapProps } from './field-distribution-map.types'
 
 const OSM_TILE = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -18,10 +23,10 @@ const colorForFarmer = (farmerId: string): string => {
   return FARMER_COLORS[sum % FARMER_COLORS.length]
 }
 
-function FitToFields({ fields }: { fields: Field[] }) {
+function FitToFields({ fields, enabled }: { fields: Field[]; enabled: boolean }) {
   const map = useMap()
   useEffect(() => {
-    if (fields.length === 0) {
+    if (!enabled || fields.length === 0) {
       return
     }
 
@@ -30,13 +35,37 @@ function FitToFields({ fields }: { fields: Field[] }) {
       return
     }
 
-    map.fitBounds(pts, { padding: [24, 24] })
-  }, [fields, map])
+    map.fitBounds(pts, { padding: [32, 32], maxZoom: 18 })
+  }, [enabled, fields, map])
   return null
 }
 
-export function FieldDistributionMap({ fields, title = 'Field distribution map' }: FieldDistributionMapProps) {
-  const [center, setCenter] = useState(DEFAULT_MAP_FALLBACK_CENTER)
+function SyncMapView({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap()
+  useEffect(() => {
+    map.setView(center, zoom, { animate: false })
+  }, [center, zoom, map])
+  return null
+}
+
+export function FieldDistributionMap({
+  fields,
+  focusFarmerId,
+  title = 'Field distribution map',
+}: FieldDistributionMapProps) {
+  const [view, setView] = useState<{
+    center: { lat: number; lng: number }
+    zoom: number
+  }>({
+    center: DEFAULT_MAP_FALLBACK_CENTER,
+    zoom: DISTRIBUTION_MAP_FALLBACK_ZOOM,
+  })
+  const [locationReady, setLocationReady] = useState(false)
+
+  const boundsFields = useMemo(
+    () => (focusFarmerId ? fields.filter((f) => f.farmerId === focusFarmerId) : fields),
+    [fields, focusFarmerId],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -45,7 +74,11 @@ export function FieldDistributionMap({ fields, title = 'Field distribution map' 
       DEFAULT_MAP_FALLBACK_CENTER,
     ).then((res) => {
       if (!cancelled) {
-        setCenter({ lat: res.lat, lng: res.lng })
+        setView({
+          center: { lat: res.lat, lng: res.lng },
+          zoom: res.source === 'geolocation' ? DISTRIBUTION_MAP_GEOLOCATION_ZOOM : DISTRIBUTION_MAP_FALLBACK_ZOOM,
+        })
+        setLocationReady(true)
       }
     })
     return () => {
@@ -66,14 +99,15 @@ export function FieldDistributionMap({ fields, title = 'Field distribution map' 
 
       <div className="mt-4 h-[min(420px,55vh)] w-full min-h-[320px] overflow-hidden rounded-2xl border border-black/10 bg-slate-100">
         <MapContainer
-          center={[center.lat, center.lng]}
-          zoom={13}
+          center={[view.center.lat, view.center.lng]}
+          zoom={view.zoom}
           scrollWheelZoom
           className="z-0 h-full w-full [&_.leaflet-container]:h-full [&_.leaflet-container]:min-h-[320px]"
           style={{ minHeight: 320 }}
         >
           <TileLayer attribution={OSM_ATTR} url={OSM_TILE} />
-          <FitToFields fields={fields} />
+          <SyncMapView center={[view.center.lat, view.center.lng]} zoom={view.zoom} />
+          <FitToFields fields={boundsFields} enabled={locationReady} />
           {fields.map((field) => (
             <Polygon
               key={field.id}

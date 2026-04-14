@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { CreateAggregationWorkspace } from '@/components/aggregator/create-aggregation-workspace'
+import { btnCtaAmberClass, btnPrimaryClass, btnSecondaryClass } from '@/components/ui/button-styles'
 import type { Role } from '@/lib/domain/types'
 import { findRoleAction, getRoleCapability } from '@/lib/roles/capabilities'
 
@@ -65,23 +66,17 @@ export default async function RoleActionPage({
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">{action.label}</h1>
         <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-700">{action.description}</p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href={action.href}
-            className="inline-flex rounded-full bg-amber-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-900"
-          >
+          <Link href={action.href} className={btnCtaAmberClass}>
             Open workflow
           </Link>
-          <Link
-            href="/"
-            className="inline-flex rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
-          >
+          <Link href="/" className={btnSecondaryClass}>
             Home dashboard
           </Link>
         </div>
         {role === 'admin' ? (
           <div className="mt-4">
-            <Link href="/admin" className="text-sm font-medium text-amber-900 underline-offset-2 hover:underline">
-              Admin overview →
+            <Link href="/admin" className={btnPrimaryClass}>
+              Admin overview
             </Link>
           </div>
         ) : null}

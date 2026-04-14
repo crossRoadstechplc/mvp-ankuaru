@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { ROLE_VALUES } from '@/lib/domain/constants'
 import type { LiveDataStore } from '@/lib/domain/types'
@@ -9,6 +9,9 @@ import { buildRoleDashboardView } from '@/lib/roles/dashboard'
 import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
 import { LotValidationHub } from '@/components/aggregator/lot-validation-hub'
+import { RoleRecentLedgerStrip } from '@/components/dashboard/role-recent-ledger-strip'
+import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
+import { btnCtaAmberClass, btnCtaOpenCompactClass, btnSecondaryClass } from '@/components/ui/button-styles'
 
 import { RoleSwitcher } from './role-switcher'
 
@@ -69,6 +72,11 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
   const firstAction = roleView.actions[0]
   const firstModule = roleView.modules[0]
   const showAggregatorValidationFirst = selectedRole === 'aggregator'
+  const pendingFarmerValidationCount = useMemo(
+    () =>
+      store.lots.filter((lot) => lotIsFarmerOriginHeldAtFarm(lot) && lot.validationStatus === 'PENDING').length,
+    [store.lots],
+  )
 
   return (
     <div className="flex w-full max-w-none flex-col gap-8">
@@ -92,16 +100,42 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
         )}
 
         {showAggregatorValidationFirst ? (
-          <section className="rounded-[2rem] border border-amber-200 bg-amber-50/40 p-6 shadow-sm shadow-black/5">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-amber-800">Aggregator priority</p>
-            <h2 className="mt-1 text-2xl font-semibold text-slate-950">Lot validation</h2>
-            <p className="mt-2 text-sm text-slate-700">
-              Validate farmer-origin picks first. Cleared lots then appear in aggregation workflows.
-            </p>
-            <div className="mt-5">
+          <details
+            className="group rounded-[2rem] border border-amber-200 bg-amber-50/40 p-6 shadow-sm shadow-black/5 open:shadow-md open:ring-1 open:ring-amber-300/40"
+            defaultOpen={pendingFarmerValidationCount > 0}
+          >
+            <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium uppercase tracking-[0.24em] text-amber-800">Aggregator priority</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-950">Lot validation</h2>
+                  <p className="mt-2 text-sm text-slate-700">
+                    Validate farmer-origin picks first. Cleared lots then appear in aggregation workflows.
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                  {pendingFarmerValidationCount > 0 ? (
+                    <span className="rounded-full bg-amber-700 px-3 py-1 text-xs font-bold text-white shadow-md shadow-amber-900/25 ring-1 ring-amber-950/20">
+                      {pendingFarmerValidationCount} awaiting
+                    </span>
+                  ) : (
+                    <span className="rounded-full border border-amber-200/80 bg-white/80 px-3 py-1 text-xs font-semibold text-amber-900/90 shadow-sm">
+                      No new farmer picks to validate
+                    </span>
+                  )}
+                  <span
+                    className="select-none text-lg leading-none text-amber-900 transition-transform duration-200 group-open:rotate-180"
+                    aria-hidden
+                  >
+                    ▼
+                  </span>
+                </div>
+              </div>
+            </summary>
+            <div className="mt-6 border-t border-amber-200/60 pt-6">
               <LotValidationHub />
             </div>
-          </section>
+          </details>
         ) : null}
 
         <section
@@ -125,11 +159,11 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Start here</p>
               <p className="mt-2 text-sm font-medium text-slate-900">
                 {firstAction ? (
-                  <Link href={firstAction.href} className="text-amber-900 underline-offset-2 hover:underline">
+                  <Link href={firstAction.href} className={btnCtaAmberClass}>
                     {firstAction.label}
                   </Link>
                 ) : roleView.capability.isReadOnly ? (
-                  <Link href="/discovery" className="text-amber-900 underline-offset-2 hover:underline">
+                  <Link href="/discovery" className={btnCtaAmberClass}>
                     Discovery (read-only)
                   </Link>
                 ) : (
@@ -144,7 +178,11 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Where next</p>
               <p className="mt-2 text-sm text-slate-800">
-                Sidebar links for your role, plus <Link href="/discovery" className="font-medium text-amber-900 underline-offset-2 hover:underline">Discovery</Link> everywhere.
+                Sidebar links for your role, plus{' '}
+                <Link href="/discovery" className={btnSecondaryClass}>
+                  Discovery
+                </Link>{' '}
+                everywhere.
               </p>
             </div>
           </div>
@@ -154,11 +192,7 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
               <p className="text-sm font-medium text-slate-700">More actions</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {roleView.actions.slice(1).map((action) => (
-                  <Link
-                    key={action.id}
-                    href={action.href}
-                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:border-amber-300 hover:bg-amber-50/60"
-                  >
+                  <Link key={action.id} href={action.href} className={btnSecondaryClass}>
                     {action.label}
                   </Link>
                 ))}
@@ -166,6 +200,8 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
             </div>
           ) : null}
         </section>
+
+        <RoleRecentLedgerStrip role={selectedRole} store={store} selectedUserId={selectedUserId} />
 
         <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
           <div className="flex flex-col gap-1">
@@ -206,10 +242,7 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
                             <p className="mt-1 text-slate-600">{item.detail}</p>
                           </div>
                           {item.href ? (
-                            <Link
-                              href={item.href}
-                              className="shrink-0 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                            >
+                            <Link href={item.href} className={`${btnCtaOpenCompactClass} shrink-0`}>
                               Open
                             </Link>
                           ) : null}

@@ -4,6 +4,8 @@ import type { FormEvent } from 'react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+import { btnCtaSkyLgClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import type { Driver, Lot, User, Vehicle } from '@/lib/domain/types'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
@@ -92,6 +94,7 @@ export function DispatchForm() {
           insuredInTransit: insuredInTransit || undefined,
         }),
       })
+      showAppToast('Dispatch recorded. Custody is now with the transporter.')
       setLocationStatus('')
       setInsuredInTransit(false)
       router.back()
@@ -198,7 +201,7 @@ export function DispatchForm() {
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-sky-800 px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        className={btnCtaSkyLgClass}
       >
         {saving ? 'Recording…' : 'Record dispatch'}
       </button>

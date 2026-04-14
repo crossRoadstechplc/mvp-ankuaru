@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 
+import { btnCtaRoseClass, btnSecondaryClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
+
 type Props = {
   /** POST /api/integrity/run — optional header for tests / multi-root workspaces */
   projectRootHeader?: string
@@ -28,13 +31,16 @@ export function RunIntegrityButton({ projectRootHeader }: Props) {
       const data = (await res.json()) as { error?: string; issueCount?: number; eventsAppended?: number }
       if (!res.ok) {
         setError(data.error ?? 'Request failed')
+        showAppToast(data.error ?? 'Integrity run failed', 'error')
         return
       }
-      setMessage(
-        `Scan complete (${apply ? 'applied' : 'dry run'}): ${data.issueCount ?? 0} lot(s) with issues; ${data.eventsAppended ?? 0} integrity event(s) appended.`,
-      )
+      const summary = `Scan complete (${apply ? 'applied' : 'dry run'}): ${data.issueCount ?? 0} lot(s) with issues; ${data.eventsAppended ?? 0} integrity event(s) appended.`
+      setMessage(summary)
+      showAppToast(apply ? 'Integrity checks applied.' : 'Integrity dry run finished.')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Request failed')
+      const msg = e instanceof Error ? e.message : 'Request failed'
+      setError(msg)
+      showAppToast(msg, 'error')
     } finally {
       setBusy(false)
     }
@@ -43,20 +49,10 @@ export function RunIntegrityButton({ projectRootHeader }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void run(true)}
-          className="rounded-full border border-rose-200 bg-rose-700 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
+        <button type="button" disabled={busy} onClick={() => void run(true)} className={btnCtaRoseClass}>
           {busy ? 'Running…' : 'Run integrity checks (apply)'}
         </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void run(false)}
-          className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-medium text-slate-800 disabled:opacity-50"
-        >
+        <button type="button" disabled={busy} onClick={() => void run(false)} className={btnSecondaryClass}>
           Dry run (no quarantine writes)
         </button>
       </div>

@@ -9,6 +9,8 @@ import { useLiveDataClientStore } from '@/store/live-data-client-store'
 import { useSessionStore } from '@/store/session-store'
 import { useUiStore } from '@/store/ui-store'
 
+import { btnCtaAmberClass, btnSecondaryClass } from '@/components/ui/button-styles'
+
 import { FarmerLotCreationForm } from './farmer-lot-creation-form'
 import { FarmerOriginLotsList } from './farmer-origin-lots-list'
 
@@ -42,7 +44,6 @@ export function FarmerLotsClient() {
   const fieldError = useLiveDataClientStore((s) => s.fieldsError)
   const lotError = useLiveDataClientStore((s) => s.lotsError)
   const loadAll = useLiveDataClientStore((s) => s.loadAll)
-  const [banner, setBanner] = useState<string | null>(null)
   const loadError = fieldError ?? lotError
 
   const reload = useCallback(async () => {
@@ -90,35 +91,20 @@ export function FarmerLotsClient() {
         </div>
         <div className="flex flex-wrap gap-2">
           {isFarmerSession ? (
-            <Link
-              href="/farmer/fields"
-              className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700"
-            >
+            <Link href="/farmer/fields" className={btnSecondaryClass}>
               Field management
             </Link>
           ) : null}
           {isAggregatorSession ? (
-            <Link
-              href="/actions/create-aggregation?role=aggregator"
-              className="inline-flex rounded-full bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900"
-            >
+            <Link href="/actions/create-aggregation?role=aggregator" className={btnCtaAmberClass}>
               Create aggregation
             </Link>
           ) : null}
-          <Link
-            href="/"
-            className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700"
-          >
+          <Link href="/" className={btnSecondaryClass}>
             Dashboard
           </Link>
         </div>
       </header>
-
-      {banner ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          {banner}
-        </div>
-      ) : null}
 
       {sessionRole && !isFarmerSession && !isAggregatorSession ? (
         <div className="rounded-2xl border border-sky-200 bg-sky-50/90 p-4 text-sm text-sky-950">
@@ -143,8 +129,7 @@ export function FarmerLotsClient() {
               <FarmerLotCreationForm
                 farmerUserId={farmerUserId}
                 fields={fields}
-                onCreated={(lotId) => {
-                  setBanner(`Pick created (${lotId}). Use the list below to open the detail page.`)
+                onCreated={() => {
                   void reload()
                 }}
               />

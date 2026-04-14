@@ -4,6 +4,8 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+import { btnCtaCyanLgClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import type { Lot, User } from '@/lib/domain/types'
 import { LabStatusBadge } from '@/components/labs/lab-status-badge'
 
@@ -84,6 +86,7 @@ export function LabResultForm({ lot, labUsers, onSuccess }: LabResultFormProps) 
           metadata,
         }),
       })
+      showAppToast(`Lab result saved for ${lot.publicLotCode}.`)
       onSuccess?.()
       router.replace('/lab')
       queueMicrotask(() => {
@@ -182,7 +185,7 @@ export function LabResultForm({ lot, labUsers, onSuccess }: LabResultFormProps) 
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-cyan-700 px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        className={btnCtaCyanLgClass}
       >
         {saving ? 'Saving…' : 'Submit lab result'}
       </button>

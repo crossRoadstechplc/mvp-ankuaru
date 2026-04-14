@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from 'vitest'
 
+import { findOtherFarmerOverlappingField } from '@/lib/fields/field-overlap'
 import {
   buildFieldGeometryPayload,
   computePolygonAreaSqm,
@@ -60,5 +61,46 @@ describe('field geometry helpers', () => {
     expect(payload.polygon).toHaveLength(3)
     expect(payload.centroid).toBeDefined()
     expect(payload.areaSqm).toBeGreaterThan(0)
+  })
+})
+
+describe('findOtherFarmerOverlappingField', () => {
+  const otherFarmerPlot = {
+    id: 'field-other',
+    farmerId: 'farmer-b',
+    name: 'Neighbor plot',
+    polygon: [
+      { lat: 1, lng: 1 },
+      { lat: 3, lng: 1 },
+      { lat: 3, lng: 3 },
+      { lat: 1, lng: 3 },
+    ],
+  }
+
+  it('returns undefined when only the same farmer overlaps', () => {
+    const mine = [
+      { lat: 1.5, lng: 1.5 },
+      { lat: 2.5, lng: 1.5 },
+      { lat: 2.5, lng: 2.5 },
+      { lat: 1.5, lng: 2.5 },
+    ]
+    const sameFarmer = { ...otherFarmerPlot, id: 'field-mine', farmerId: 'farmer-a', name: 'My other plot' }
+    expect(findOtherFarmerOverlappingField(mine, 'farmer-a', undefined, [sameFarmer])).toBeUndefined()
+  })
+
+  it('detects intersection with another farmer field', () => {
+    const crossesNeighbor = [
+      { lat: 2, lng: 2 },
+      { lat: 4, lng: 2 },
+      { lat: 4, lng: 4 },
+      { lat: 2, lng: 4 },
+    ]
+    const hit = findOtherFarmerOverlappingField(crossesNeighbor, 'farmer-a', undefined, [otherFarmerPlot])
+    expect(hit?.id).toBe('field-other')
+  })
+
+  it('excludes the active field id on edit', () => {
+    const poly = otherFarmerPlot.polygon
+    expect(findOtherFarmerOverlappingField(poly, 'farmer-b', 'field-other', [otherFarmerPlot])).toBeUndefined()
   })
 })

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { btnPrimaryClass, btnSecondaryClass } from '@/components/ui/button-styles'
+import { btnCtaOpenCompactClass, btnCtaTealClass, btnPrimaryClass, btnSecondaryClass } from '@/components/ui/button-styles'
 import { PageIntro } from '@/components/ui/page-intro'
 import { initializeLiveDataStore } from '@/lib/persistence/live-data-store'
 
@@ -25,10 +25,7 @@ export default async function TradeHubPage() {
         <Link href="/trade/rfqs" className={btnSecondaryClass}>
           RFQs
         </Link>
-        <Link
-          href="/trade/delivery"
-          className="inline-flex items-center justify-center rounded-full border border-teal-200 bg-teal-50 px-5 py-2.5 text-sm font-semibold text-teal-950 hover:bg-teal-100/80"
-        >
+        <Link href="/trade/delivery" className={btnCtaTealClass}>
           Delivery
         </Link>
       </div>
@@ -46,11 +43,11 @@ export default async function TradeHubPage() {
               >
                 <span className="font-mono text-slate-800">{t.id}</span>
                 <span className="text-slate-600">{t.status}</span>
-                <span className="flex flex-wrap gap-3 text-amber-900">
-                  <Link href={`/trade/trades/${t.id}`} className="font-medium underline-offset-2 hover:underline">
+                <span className="flex flex-wrap gap-2">
+                  <Link href={`/trade/trades/${t.id}`} className={btnCtaOpenCompactClass}>
                     Trade
                   </Link>
-                  <Link href={`/trade/settlement/${t.id}`} className="font-medium underline-offset-2 hover:underline">
+                  <Link href={`/trade/settlement/${t.id}`} className={btnCtaOpenCompactClass}>
                     Settlement
                   </Link>
                 </span>

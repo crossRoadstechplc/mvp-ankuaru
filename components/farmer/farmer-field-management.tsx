@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Field } from '@/lib/domain/types'
+import { showAppToast } from '@/lib/client/app-toast'
+import { findOtherFarmerOverlappingField, otherFarmerOverlapMessage } from '@/lib/fields/field-overlap'
 import { buildFieldGeometryPayload } from '@/lib/fields/geometry'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
 import { useUiStore } from '@/store/ui-store'
@@ -66,6 +68,7 @@ export function FarmerFieldManagement() {
   const [fieldName, setFieldName] = useState('')
   const [draftGeometry, setDraftGeometry] = useState<GeometryDraft | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const [overlapWarning, setOverlapWarning] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const farmerFields = useMemo(
@@ -89,6 +92,20 @@ export function FarmerFieldManagement() {
   useEffect(() => {
     void loadFieldsFromApi({ force: true })
   }, [loadFieldsFromApi])
+
+  useEffect(() => {
+    if (!draftGeometry || draftGeometry.polygon.length < 3) {
+      setOverlapWarning(null)
+      return
+    }
+    const other = findOtherFarmerOverlappingField(
+      draftGeometry.polygon,
+      farmerUserId,
+      activeFieldId ?? undefined,
+      allFields,
+    )
+    setOverlapWarning(other ? otherFarmerOverlapMessage(other) : null)
+  }, [activeFieldId, allFields, draftGeometry, farmerUserId])
 
   const resetToNew = () => {
     setActiveFieldId(null)
@@ -128,8 +145,11 @@ export function FarmerFieldManagement() {
         resetToNew()
       }
       await loadFields()
+      showAppToast(`Field “${field.name}” was removed.`)
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : 'Delete failed')
+      const msg = e instanceof Error ? e.message : 'Delete failed'
+      setFormError(msg)
+      showAppToast(msg, 'error')
     }
   }
 
@@ -142,6 +162,17 @@ export function FarmerFieldManagement() {
     }
     if (!draftGeometry || draftGeometry.polygon.length < 3) {
       setFormError('Draw a polygon with at least three vertices on the map.')
+      return
+    }
+
+    const crossed = findOtherFarmerOverlappingField(
+      draftGeometry.polygon,
+      farmerUserId,
+      activeFieldId ?? undefined,
+      allFields,
+    )
+    if (crossed) {
+      setFormError(otherFarmerOverlapMessage(crossed))
       return
     }
 
@@ -169,8 +200,11 @@ export function FarmerFieldManagement() {
 
       await loadFields()
       resetToNew()
+      showAppToast(activeFieldId ? `Field “${name}” updated.` : `Field “${name}” saved to your farm registry.`)
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : 'Save failed')
+      const msg = e instanceof Error ? e.message : 'Save failed'
+      setFormError(msg)
+      showAppToast(msg, 'error')
     } finally {
       setSaving(false)
     }
@@ -184,7 +218,8 @@ export function FarmerFieldManagement() {
           <h1 className="mt-2 text-3xl font-semibold text-slate-950">Field management</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             Draw field boundaries on the map, keep plots tied to <span className="font-mono text-slate-800">farmerId</span>, and
-            persist everything through the fields API. The map starts at your current location when the browser allows it.
+            persist everything through the fields API. Boundaries must not cross another farmer’s saved field. The map starts at
+            your current location when the browser allows it.
           </p>
           <p className="mt-2 text-sm text-slate-600">
             Managing fields for farmer user id:{' '}
@@ -269,11 +304,14 @@ export function FarmerFieldManagement() {
               </p>
             </div>
 
+            {overlapWarning ? (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">{overlapWarning}</p>
+            ) : null}
             {formError ? <p className="text-sm text-red-700">{formError}</p> : null}
 
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || Boolean(overlapWarning)}
               onClick={() => void handleSave()}
               className="rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
             >
@@ -283,7 +321,11 @@ export function FarmerFieldManagement() {
         </div>
       </section>
 
-      <FieldDistributionMapDynamic fields={allFields} title="Farm distribution (all farmers)" />
+      <FieldDistributionMapDynamic
+        fields={allFields}
+        focusFarmerId={farmerUserId}
+        title="Farm distribution (all farmers)"
+      />
 
       <section className="rounded-[2rem] border border-black/10 bg-white p-6 shadow-sm shadow-black/5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

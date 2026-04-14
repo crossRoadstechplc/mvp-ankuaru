@@ -76,6 +76,6 @@ describe('R8 regulator nav includes Discovery', () => {
 
     const nav = screen.getByRole('navigation', { name: /workspace/i })
     expect(within(nav).getByRole('link', { name: 'Discovery' })).toHaveAttribute('href', '/discovery')
-    expect(within(nav).getByRole('link', { name: 'Oversight' })).toHaveAttribute('href', '/regulator')
+    expect(within(nav).getByRole('link', { name: 'Reviewer reports' })).toHaveAttribute('href', '/regulator')
   })
 })

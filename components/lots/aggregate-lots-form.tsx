@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { btnCtaAmberLgClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import { LOT_FORM_VALUES } from '@/lib/domain/constants'
 import type { Lot, User } from '@/lib/domain/types'
 import { lotEligibleForAggregationPicker } from '@/lib/lots/lot-validation-gates'
@@ -211,7 +213,12 @@ export function AggregateLotsForm({ onSuccess, lockedActorId, includeFarmerOrigi
           outputForm,
           actorId: resolvedActorId,
         }),
-      })) as { lot: { id: string } }
+      })) as { lot: { id: string; publicLotCode?: string } }
+      showAppToast(
+        data.lot.publicLotCode
+          ? `Aggregation complete: output ${data.lot.publicLotCode} is on the ledger.`
+          : 'Aggregation complete. New output lot is on the ledger.',
+      )
       onSuccess?.(data.lot.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Aggregation failed')
@@ -341,7 +348,7 @@ export function AggregateLotsForm({ onSuccess, lockedActorId, includeFarmerOrigi
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-amber-600 px-6 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className={btnCtaAmberLgClass}
       >
         {saving ? 'Creating…' : 'Create aggregated lot'}
       </button>

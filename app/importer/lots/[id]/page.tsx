@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { LotIntegrityBanner } from '@/components/integrity/lot-integrity-banner'
+import { btnCtaTealClass } from '@/components/ui/button-styles'
 import { DeliveryStatusBadges } from '@/components/trade/delivery-status-badges'
 import { EventTimeline } from '@/components/events/event-timeline'
 import { getTradeForLot } from '@/lib/delivery/trade-for-lot'
@@ -83,8 +84,8 @@ export default async function ImporterLotDetailPage({
             Pricing, margins, and financing appear only in the deal workspace — not on the physical trace.
           </p>
           <p className="mt-2 text-sm">
-            <Link href={`/trade/trades/${tradeView.id}`} className="font-medium text-teal-900 underline-offset-2 hover:underline">
-              Open trade workspace →
+            <Link href={`/trade/trades/${tradeView.id}`} className={btnCtaTealClass}>
+              Open trade workspace
             </Link>
           </p>
         </section>

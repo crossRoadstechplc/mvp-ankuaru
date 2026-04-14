@@ -2,6 +2,8 @@
 
 import { startTransition, useMemo, useState } from 'react'
 
+import { showAppToast } from '@/lib/client/app-toast'
+
 type CrudFieldOption = {
   label: string
   value: string
@@ -123,6 +125,7 @@ export function CrudShell<T extends { id: string }>({
         setExpandedId(nextItem.id)
         openEdit(nextItem)
       })
+      showAppToast(mode === 'create' ? 'Record created.' : 'Changes saved.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to save item')
     } finally {
@@ -152,6 +155,7 @@ export function CrudShell<T extends { id: string }>({
           setExpandedId(null)
         }
       })
+      showAppToast('Record deleted.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to delete item')
     } finally {

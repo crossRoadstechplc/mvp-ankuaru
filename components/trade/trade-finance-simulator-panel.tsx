@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 
+import { btnCtaAmberClass, btnCtaEmeraldClass, btnCtaOrangeClass, btnCtaRoseClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import type { Trade } from '@/lib/domain/types'
 import { marginMaintenanceFloorFromPercent } from '@/lib/trade-lifecycle/margin-floor'
 
@@ -45,6 +47,7 @@ export function TradeFinanceSimulatorPanel({
     setError(null)
     try {
       await fetchJson(url, { method: 'POST', body: JSON.stringify(body) })
+      showAppToast('Trade simulator action saved.')
       window.location.reload()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed')
@@ -134,7 +137,7 @@ export function TradeFinanceSimulatorPanel({
           <button
             type="submit"
             disabled={busy}
-            className="rounded-full bg-emerald-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className={btnCtaEmeraldClass}
           >
             Submit settlement
           </button>
@@ -175,7 +178,7 @@ export function TradeFinanceSimulatorPanel({
           <button
             type="submit"
             disabled={busy}
-            className="rounded-full bg-amber-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className={btnCtaAmberClass}
           >
             Run margin evaluation
           </button>
@@ -199,7 +202,7 @@ export function TradeFinanceSimulatorPanel({
           <button
             type="submit"
             disabled={busy || bankOptions.length === 0}
-            className="rounded-full bg-orange-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className={btnCtaOrangeClass}
           >
             Declare default
           </button>
@@ -225,7 +228,7 @@ export function TradeFinanceSimulatorPanel({
           <button
             type="submit"
             disabled={busy || bankOptions.length === 0}
-            className="rounded-full bg-rose-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className={btnCtaRoseClass}
           >
             Liquidate collateral
           </button>

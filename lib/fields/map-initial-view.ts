@@ -3,6 +3,12 @@
  */
 export const DEFAULT_MAP_FALLBACK_CENTER = { lat: 6.179, lng: 38.2026 }
 
+/** Initial zoom when center comes from browser geolocation (closer than seeded-area default). */
+export const DISTRIBUTION_MAP_GEOLOCATION_ZOOM = 17
+
+/** Initial zoom when geolocation is unavailable and the demo fallback center is used. */
+export const DISTRIBUTION_MAP_FALLBACK_ZOOM = 13
+
 export type MapCenterResolution = {
   lat: number
   lng: number

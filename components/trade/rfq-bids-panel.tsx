@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 
+import { btnCtaAmberClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import type { Bid, RFQ, Role, Trade } from '@/lib/domain/types'
 import { canViewBidCommercials, redactBidForRole } from '@/lib/trade-discovery/commercial-visibility'
 import { canSelectWinningBidForRfq } from '@/lib/trade-discovery/discovery-permissions'
@@ -59,6 +61,7 @@ export function RfqBidsPanel({ rfq, bids, linkedTrade }: RfqBidsPanelProps) {
           rfqOwnerUserId: rfq.createdByUserId,
         }),
       })
+      showAppToast('Winning bid selected. Trade is being linked.')
       window.location.reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Selection failed')
@@ -113,7 +116,7 @@ export function RfqBidsPanel({ rfq, bids, linkedTrade }: RfqBidsPanelProps) {
                   type="button"
                   disabled={busyId !== null}
                   onClick={() => void handleSelect(bid.id)}
-                  className="mt-4 rounded-full bg-amber-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  className={`mt-4 ${btnCtaAmberClass}`}
                 >
                   {busyId === bid.id ? 'Selecting…' : 'Select winning bid'}
                 </button>

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { btnCtaAmberClass, btnCtaVioletClass } from '@/components/ui/button-styles'
 import { TradeFinancingBadges } from '@/components/trade/trade-financing-badges'
 import { TradeLifecycleBadges } from '@/components/trade/trade-lifecycle-badges'
 import { PageIntro } from '@/components/ui/page-intro'
@@ -21,8 +22,8 @@ export default async function BankDashboardPage() {
         lead="Review pending trades, margin terms (simulator), and collateral. Payment rails are not connected."
       />
       <p>
-        <Link href="/bank/onboarding" className="text-sm font-medium text-violet-800 underline-offset-2 hover:underline">
-          User onboarding queue →
+        <Link href="/bank/onboarding" className={btnCtaVioletClass}>
+          User onboarding queue
         </Link>
       </p>
 
@@ -36,7 +37,7 @@ export default async function BankDashboardPage() {
               <li key={trade.id}>
                 <Link
                   href={`/bank/trades/${trade.id}`}
-                  className="block rounded-2xl border border-violet-200 bg-white p-5 shadow-sm transition hover:border-violet-400"
+                  className="block rounded-2xl border border-violet-200/90 bg-white p-5 shadow-lg shadow-violet-900/10 ring-2 ring-white/90 transition hover:border-violet-400 hover:shadow-xl"
                 >
                   <p className="font-mono text-xs text-slate-500">{trade.id}</p>
                   <p className="mt-2 text-sm text-slate-600">Status: {trade.status}</p>
@@ -44,7 +45,9 @@ export default async function BankDashboardPage() {
                   <div className="mt-3">
                     <TradeFinancingBadges trade={trade} collateralActive={false} />
                   </div>
-                  <span className="mt-3 inline-block text-sm font-medium text-violet-800">Open review →</span>
+                  <span className="mt-4 inline-flex rounded-full border border-violet-300/80 bg-gradient-to-b from-violet-50 to-white px-4 py-2 text-sm font-semibold text-violet-950 shadow-md shadow-violet-900/10 ring-1 ring-white/80">
+                    Open review →
+                  </span>
                 </Link>
               </li>
             ))}
@@ -65,7 +68,7 @@ export default async function BankDashboardPage() {
                   trade={t}
                   collateralActive={t.lotIds.some((id) => store.lots.find((l) => l.id === id)?.isCollateral)}
                 />
-                <Link href={`/bank/trades/${t.id}`} className="text-violet-800 underline-offset-2 hover:underline">
+                <Link href={`/bank/trades/${t.id}`} className={btnCtaVioletClass}>
                   View
                 </Link>
               </li>
@@ -91,11 +94,8 @@ export default async function BankDashboardPage() {
                 <li key={t.id} className="rounded-xl border border-amber-200 bg-amber-50/50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-mono text-sm">{t.id}</span>
-                    <Link
-                      href={`/trade/settlement/${t.id}`}
-                      className="text-sm font-medium text-amber-900 underline-offset-2 hover:underline"
-                    >
-                      Open risk tools →
+                    <Link href={`/trade/settlement/${t.id}`} className={btnCtaAmberClass}>
+                      Open risk tools
                     </Link>
                   </div>
                   <div className="mt-2">

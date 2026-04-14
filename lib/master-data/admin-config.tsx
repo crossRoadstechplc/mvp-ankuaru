@@ -415,7 +415,7 @@ export function AdminSectionLinks() {
         <Link
           key={section.href}
           href={section.href}
-          className="rounded-[2rem] border border-black/10 bg-white p-5 shadow-sm shadow-black/5 transition-transform hover:-translate-y-0.5"
+          className="rounded-[2rem] border border-slate-200/90 bg-white p-5 shadow-lg shadow-slate-900/10 ring-2 ring-white/80 transition hover:-translate-y-0.5 hover:border-amber-200/60 hover:shadow-xl"
         >
           <p className="text-xl font-semibold text-slate-950">{section.label}</p>
           <p className="mt-2 text-sm leading-6 text-slate-600">{section.detail}</p>

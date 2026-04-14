@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import type { Driver, User, Vehicle } from '@/lib/domain/types'
+import { btnCtaVioletClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
 import { dispatchTransportMutationEvent } from '@/lib/client/transport-mutation-event'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
@@ -132,6 +134,7 @@ export function SendToLabForm() {
           locationStatus: locationStatus.trim() || 'Received at assigned lab',
         }),
       })
+      showAppToast('Lot assigned: dispatch and lab receipt are on the ledger.')
       await loadLots({ force: true })
       dispatchTransportMutationEvent()
       router.refresh()
@@ -252,7 +255,7 @@ export function SendToLabForm() {
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-violet-700 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+        className={btnCtaVioletClass}
       >
         {saving ? 'Assigning…' : 'Assign and send to lab'}
       </button>

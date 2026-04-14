@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 import { SessionGate } from '@/components/auth/session-gate'
+import { AppToastHost } from '@/components/ui/app-toast-host'
 
 import './globals.css'
 
@@ -18,6 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <SessionGate>{children}</SessionGate>
+        <AppToastHost />
       </body>
     </html>
   )

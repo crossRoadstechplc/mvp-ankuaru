@@ -98,6 +98,14 @@ export default async function LotDetailPage({
         </section>
       ) : null}
       <LotIntegrityBanner lot={lot} />
+      {parentLots.length > 0 ? (
+        <p className="text-sm text-slate-700">
+          <Link href={`/lots/${lot.id}/parents`} className="font-medium text-slate-900 underline-offset-2 hover:underline">
+            View parent lots only
+          </Link>{' '}
+          <span className="text-slate-500">({parentLots.length} direct source snapshot{parentLots.length === 1 ? '' : 's'})</span>
+        </p>
+      ) : null}
       <LotTraceabilityPanel
         lotId={lot.id}
         publicLotCode={lot.publicLotCode}

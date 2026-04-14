@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import type { LabResult, Lot, User } from '@/lib/domain/types'
+import { btnCtaAmberLgClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import { useServerSnapshotRefresh } from '@/hooks/use-server-snapshot-refresh'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
@@ -103,6 +105,7 @@ export function CreateRfqForm({
           credibilityMode,
         }),
       })) as { rfq: { id: string } }
+      showAppToast('RFQ published to Discovery.')
       router.push(`/discovery?created=${encodeURIComponent(res.rfq.id)}`)
       router.refresh()
     } catch (err) {
@@ -252,7 +255,7 @@ export function CreateRfqForm({
       <button
         type="submit"
         disabled={saving || publisherUsers.length === 0}
-        className="rounded-full bg-amber-800 px-6 py-2 text-sm font-semibold text-white disabled:opacity-50"
+        className={btnCtaAmberLgClass}
       >
         {saving ? 'Publishing…' : 'Publish RFQ'}
       </button>

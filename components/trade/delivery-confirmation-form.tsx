@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 
+import { showAppToast } from '@/lib/client/app-toast'
+
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
   const response = await fetch(input, {
     ...init,
@@ -74,6 +76,7 @@ export function DeliveryConfirmationForm({
           adjustmentAmount: adj,
         }),
       })
+      showAppToast('Delivery confirmation saved.')
       window.location.reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')

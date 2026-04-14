@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useMemo, useState } from 'react'
 
+import { btnCtaEmeraldClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import type { Lot } from '@/lib/domain/types'
 import { lotIsFarmerOriginHeldAtFarm } from '@/lib/lots/lot-validation-gates'
 
@@ -63,6 +65,11 @@ export function ValidateLotForm({ lot, actorId, onSuccess }: ValidateLotFormProp
           validationNotes: notes.trim() || undefined,
         }),
       })) as { lot: Lot }
+      showAppToast(
+        decision === 'VALIDATED'
+          ? `Lot ${data.lot.publicLotCode} validated.`
+          : `Lot ${data.lot.publicLotCode} marked rejected.`,
+      )
       onSuccess?.(data.lot)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Validation failed')
@@ -150,7 +157,7 @@ export function ValidateLotForm({ lot, actorId, onSuccess }: ValidateLotFormProp
           type="button"
           disabled={saving || !applicable}
           onClick={() => void submit('VALIDATED')}
-          className="rounded-full bg-emerald-700 px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className={btnCtaEmeraldClass}
         >
           {saving ? 'Saving…' : 'Approve (validated)'}
         </button>

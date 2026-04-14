@@ -3,8 +3,10 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 
-import type { Trade, User } from '@/lib/domain/types'
 import { TradeFinancingBadges } from '@/components/trade/trade-financing-badges'
+import { btnCtaEmeraldClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
+import type { Trade, User } from '@/lib/domain/types'
 
 const fetchJson = async (input: RequestInfo, init?: RequestInit) => {
   const response = await fetch(input, {
@@ -87,6 +89,7 @@ export function BankTradeReviewForm({ trade, bankUsers, anyLotCollateral }: Bank
           financedAmount: fa,
         }),
       })
+      showAppToast('Trade financing approved.')
       window.location.reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')
@@ -109,6 +112,7 @@ export function BankTradeReviewForm({ trade, bankUsers, anyLotCollateral }: Bank
           financingNotes: rejectNotes.trim() || undefined,
         }),
       })
+      showAppToast('Trade financing rejected (recorded).')
       window.location.reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')
@@ -192,7 +196,7 @@ export function BankTradeReviewForm({ trade, bankUsers, anyLotCollateral }: Bank
         <button
           type="submit"
           disabled={saving || bankUsers.length === 0}
-          className="rounded-full bg-emerald-800 px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className={btnCtaEmeraldClass}
         >
           {saving ? 'Saving…' : 'Approve & lock margin'}
         </button>

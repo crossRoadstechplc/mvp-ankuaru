@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Event } from '@/lib/domain/types'
 import { useLiveDataPoll } from '@/hooks/use-live-data-poll'
 import { TRANSPORT_MUTATION_EVENT } from '@/lib/client/transport-mutation-event'
+import { btnCtaOpenCompactClass, btnCtaVioletClass } from '@/components/ui/button-styles'
+import { describeProcessEventFromLots } from '@/lib/roles/role-home-ledger'
 import { PROCESSOR_PIPELINE_INPUT_STATUS } from '@/lib/lots/processing-eligibility'
 import { useLiveDataClientStore } from '@/store/live-data-client-store'
 
@@ -146,11 +148,8 @@ export function ProcessorWorkspace() {
                     {lot.form} · {lot.weight} kg
                   </span>
                 </div>
-                <Link
-                  href="/processor/record"
-                  className="text-sm font-medium text-violet-900 underline-offset-2 hover:underline"
-                >
-                  Record run →
+                <Link href="/processor/record" className={btnCtaVioletClass}>
+                  Record run
                 </Link>
               </li>
             ))}
@@ -165,17 +164,25 @@ export function ProcessorWorkspace() {
           <p className="mt-4 text-sm text-slate-600">No runs yet.</p>
         ) : (
           <ul className="mt-4 space-y-2 text-sm">
-            {processEvents.map((ev) => (
-              <li key={ev.id} className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2">
-                <span className="font-mono text-xs text-slate-500">{ev.timestamp.slice(0, 19)}Z</span>
-                <span className="ml-2 text-slate-800">
-                  {ev.inputLotIds.join(', ')} → {ev.outputLotIds.filter(Boolean).join(', ')}
-                </span>
-                {ev.inputQty !== undefined ? (
-                  <span className="ml-2 text-slate-600">in {ev.inputQty} kg</span>
-                ) : null}
-              </li>
-            ))}
+            {processEvents.map((ev) => {
+              const d = describeProcessEventFromLots(lots, ev)
+              return (
+                <li key={ev.id} className="rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="font-mono text-xs text-slate-500">{ev.timestamp.slice(0, 19)}Z</span>
+                      <p className="mt-1 font-semibold text-slate-950">{d.title}</p>
+                      <p className="text-slate-700">{d.detail}</p>
+                    </div>
+                    {d.href ? (
+                      <Link href={d.href} className={btnCtaOpenCompactClass}>
+                        {d.linkLabel}
+                      </Link>
+                    ) : null}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>

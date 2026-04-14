@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
+import { btnCtaAmberClass, btnCtaAmberLgClass, btnSecondaryClass } from '@/components/ui/button-styles'
 import type { Bid, LiveDataStore, RFQ, Trade } from '@/lib/domain/types'
 import { useServerSnapshotRefresh } from '@/hooks/use-server-snapshot-refresh'
 import { redactBidForRole } from '@/lib/trade-discovery/commercial-visibility'
@@ -140,14 +141,11 @@ export function DiscoveryWorkspace({ store }: Props) {
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-900">
                 Trade actions enabled
               </span>
-              <Link href="/trade/rfqs" className="text-sm font-medium text-amber-900 underline-offset-2 hover:underline">
+              <Link href="/trade/rfqs" className={btnSecondaryClass}>
                 Full RFQ list
               </Link>
               {canCreateDiscoveryRfq(role) ? (
-                <Link
-                  href="/trade/rfqs/new"
-                  className="rounded-full bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-                >
+                <Link href="/trade/rfqs/new" className={btnCtaAmberLgClass}>
                   New RFQ
                 </Link>
               ) : null}
@@ -294,11 +292,7 @@ export function DiscoveryWorkspace({ store }: Props) {
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href={`/trade/rfqs/${focusRfq.id}`}
-              className={
-                readOnly
-                  ? 'rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50'
-                  : 'rounded-full bg-amber-800 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-900'
-              }
+              className={readOnly ? btnSecondaryClass : btnCtaAmberClass}
             >
               {readOnly ? 'View RFQ (read-only)' : 'Open full RFQ'}
             </Link>

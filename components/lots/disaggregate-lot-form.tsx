@@ -3,6 +3,8 @@
 import type { FormEvent } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { btnCtaSkyAltLgClass } from '@/components/ui/button-styles'
+import { showAppToast } from '@/lib/client/app-toast'
 import { LOT_FORM_VALUES } from '@/lib/domain/constants'
 import type { Lot, LotForm, User } from '@/lib/domain/types'
 
@@ -137,6 +139,7 @@ export function DisaggregateLotForm({ onSuccess }: DisaggregateLotFormProps) {
           actorId,
         }),
       })) as { childLots: { id: string }[]; sourceLot: { id: string } }
+      showAppToast(`Disaggregation saved: ${data.childLots.length} child lot(s) created.`)
       onSuccess?.({
         sourceLotId: data.sourceLot.id,
         childLotIds: data.childLots.map((lot) => lot.id),
@@ -251,7 +254,7 @@ export function DisaggregateLotForm({ onSuccess }: DisaggregateLotFormProps) {
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-sky-700 px-6 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className={btnCtaSkyAltLgClass}
       >
         {saving ? 'Splitting…' : 'Create child lots'}
       </button>
