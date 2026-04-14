@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { ROLE_VALUES } from '@/lib/domain/constants'
 import type { LiveDataStore } from '@/lib/domain/types'
@@ -61,6 +61,23 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
     setSelectedUserId(usersForSelectedRole[0]?.id ?? null)
   }, [isAdminSession, selectedUserId, setSelectedUserId, usersForSelectedRole])
 
+  const pendingFarmerValidationCount = useMemo(
+    () =>
+      store.lots.filter((lot) => lotIsFarmerOriginHeldAtFarm(lot) && lot.validationStatus === 'PENDING').length,
+    [store.lots],
+  )
+  const showAggregatorValidationFirst = selectedRole === 'aggregator'
+  const [aggregatorLotValidationOpen, setAggregatorLotValidationOpen] = useState(false)
+
+  useEffect(() => {
+    if (selectedRole !== 'aggregator') {
+      return
+    }
+    if (pendingFarmerValidationCount > 0) {
+      setAggregatorLotValidationOpen(true)
+    }
+  }, [pendingFarmerValidationCount, selectedRole])
+
   if (!sessionRole || !sessionUserId) {
     return null
   }
@@ -71,12 +88,6 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
 
   const firstAction = roleView.actions[0]
   const firstModule = roleView.modules[0]
-  const showAggregatorValidationFirst = selectedRole === 'aggregator'
-  const pendingFarmerValidationCount = useMemo(
-    () =>
-      store.lots.filter((lot) => lotIsFarmerOriginHeldAtFarm(lot) && lot.validationStatus === 'PENDING').length,
-    [store.lots],
-  )
 
   return (
     <div className="flex w-full max-w-none flex-col gap-8">
@@ -102,7 +113,10 @@ export function HomeDashboard({ store }: HomeDashboardProps) {
         {showAggregatorValidationFirst ? (
           <details
             className="group rounded-[2rem] border border-amber-200 bg-amber-50/40 p-6 shadow-sm shadow-black/5 open:shadow-md open:ring-1 open:ring-amber-300/40"
-            defaultOpen={pendingFarmerValidationCount > 0}
+            open={aggregatorLotValidationOpen}
+            onToggle={(event) => {
+              setAggregatorLotValidationOpen(event.currentTarget.open)
+            }}
           >
             <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
               <div className="flex flex-wrap items-start justify-between gap-4">
